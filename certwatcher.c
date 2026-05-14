@@ -777,10 +777,12 @@ static void print_cert_json(const cert_info_t *info) {
 static void print_cert_csv(const cert_info_t *info) {
     char na[64];
     format_time(info->not_after, na, sizeof(na));
-    printf("%s,%s,%s,%s,%d,%s,%s,%d,%s,%d\n",
+    printf("%s,%s,%s,%s,%d,%s,%s,%d,%s,%d,%d,%d,%s,%.0f,%.0f\n",
            info->host, info->port, info->common_name, info->issuer,
            info->days_left, na, info->key_type, info->key_bits,
-           info->tls_version, info->chain_valid);
+           info->tls_version, info->chain_valid, info->self_signed,
+           info->ocsp_stapled, info->ip_addr,
+           info->connect_ms, info->tls_ms);
 }
 
 /* ── Parallel checking ── */
@@ -1148,7 +1150,7 @@ int main(int argc, char **argv) {
 
     /* Print results */
     if (csv)
-        printf("host,port,cn,issuer,days_left,expires,key_type,key_bits,tls,chain_valid\n");
+        printf("host,port,cn,issuer,days_left,expires,key_type,key_bits,tls,chain_valid,self_signed,ocsp,ip,connect_ms,tls_ms\n");
     if (json)
         printf("[\n");
 
