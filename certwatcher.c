@@ -251,7 +251,7 @@ static int do_starttls(SOCKET sock, enum starttls_proto proto) {
 
 static int fetch_cert(const char *host, const char *port, int timeout_sec,
                       const char *sni_name, enum starttls_proto starttls,
-                      cert_info_t *info) {
+                      int verify_strict, cert_info_t *info) {
     struct addrinfo hints, *res;
     SOCKET sock;
     SSL_CTX *ctx = NULL;
@@ -366,7 +366,10 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     if (!ctx) { closesocket(sock); return -1; }
 
     SSL_CTX_set_default_verify_paths(ctx);
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+    if (verify_strict)
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+    else
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
     ssl = SSL_new(ctx);
     if (!ssl) { SSL_CTX_free(ctx); closesocket(sock); return -1; }
@@ -706,6 +709,7 @@ typedef struct {
     int timeout_sec;
     const char *sni;
     enum starttls_proto starttls;
+    int verify_strict;
     cert_info_t *result;
     int rc;
 } check_task_t;
@@ -713,7 +717,8 @@ typedef struct {
 static void *check_thread(void *arg) {
     check_task_t *task = (check_task_t *)arg;
     task->rc = fetch_cert(task->host, task->port, task->timeout_sec,
-                          task->sni, task->starttls, task->result);
+                          task->sni, task->starttls, task->verify_strict,
+                          task->result);
     return NULL;
 }
 
@@ -772,6 +777,7 @@ int main(int argc, char **argv) {
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
+    int verify_strict = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -810,6 +816,8 @@ int main(int argc, char **argv) {
             parallel = 1;
         } else if (strcmp(argv[i], "--count") == 0) {
             count_only = 1;
+        } else if (strcmp(argv[i], "--verify") == 0) {
+            verify_strict = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -926,6 +934,7 @@ int main(int argc, char **argv) {
             tasks[i].timeout_sec = timeout_sec;
             tasks[i].sni = sni;
             tasks[i].starttls = starttls;
+            tasks[i].verify_strict = verify_strict;
             tasks[i].result = &par_results[i];
             tasks[i].rc = -1;
             pthread_create(&threads[i], NULL, check_thread, &tasks[i]);
@@ -964,7 +973,7 @@ int main(int argc, char **argv) {
         for (i = 0; i < nhost; i++) {
             cert_info_t info;
             int rc = fetch_cert(parsed_hosts[i], parsed_ports[i],
-                                timeout_sec, sni, starttls, &info);
+                                timeout_sec, sni, starttls, verify_strict, &info);
 
             if (rc != 0) {
                 if (!quiet && !json && !csv) {
