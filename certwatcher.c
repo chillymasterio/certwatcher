@@ -904,6 +904,7 @@ int main(int argc, char **argv) {
     int issuer_only = 0;
     int san_list = 0;
     int brief_mode = 0;
+    int chain_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -967,6 +968,8 @@ int main(int argc, char **argv) {
             san_list = 1;
         } else if (strcmp(argv[i], "--brief") == 0) {
             brief_mode = 1;
+        } else if (strcmp(argv[i], "--chain") == 0) {
+            chain_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1292,6 +1295,15 @@ int main(int argc, char **argv) {
                 }
                 printf("%-30s %s%-7s%s %4d days\n",
                        results[i].host, color, status, C_RESET, results[i].days_left);
+            } else if (chain_only) {
+                printf("%s%s:%s%s\n", C_BOLD, results[i].host, results[i].port, C_RESET);
+                for (int c = 0; c < results[i].chain_depth && c < 10; c++) {
+                    printf("  %s[%d]%s %s\n", C_DIM, c, C_RESET, results[i].chain_subjects[c]);
+                }
+                if (results[i].chain_valid)
+                    printf("  %sChain valid%s\n\n", C_GREEN, C_RESET);
+                else
+                    printf("  %sChain INVALID: %s%s\n\n", C_RED, results[i].verify_error, C_RESET);
             } else if (fingerprint_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
