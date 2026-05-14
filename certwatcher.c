@@ -691,6 +691,7 @@ int main(int argc, char **argv) {
     int expired_only = 0;
     int exit_warn = 0;
     int quiet = 0;
+    int sort_by_expiry = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -719,6 +720,8 @@ int main(int argc, char **argv) {
             quiet = 1;
         } else if ((strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) && i + 1 < argc) {
             output_file = argv[++i];
+        } else if (strcmp(argv[i], "--sort") == 0) {
+            sort_by_expiry = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -801,10 +804,9 @@ int main(int argc, char **argv) {
     int any_error = 0;
     int count_ok = 0, count_warn = 0, count_err = 0;
 
-    if (csv)
-        printf("host,port,cn,issuer,days_left,expires,key_type,key_bits,tls,chain_valid\n");
-    if (json)
-        printf("[\n");
+    /* Collect all results */
+    cert_info_t results[MAX_HOSTS];
+    int nresults = 0;
 
     for (i = 0; i < nhost; i++) {
         /* Parse host:port */
@@ -846,16 +848,40 @@ int main(int argc, char **argv) {
         if (expired_only && info.days_left > warn_days)
             continue;
 
+        results[nresults++] = info;
+    }
+
+    /* Sort by days remaining if requested */
+    if (sort_by_expiry && nresults > 1) {
+        int j;
+        for (i = 0; i < nresults - 1; i++) {
+            for (j = i + 1; j < nresults; j++) {
+                if (results[j].days_left < results[i].days_left) {
+                    cert_info_t tmp = results[i];
+                    results[i] = results[j];
+                    results[j] = tmp;
+                }
+            }
+        }
+    }
+
+    /* Print results */
+    if (csv)
+        printf("host,port,cn,issuer,days_left,expires,key_type,key_bits,tls,chain_valid\n");
+    if (json)
+        printf("[\n");
+
+    for (i = 0; i < nresults; i++) {
         if (!quiet) {
             if (json) {
                 if (i > 0) printf(",\n");
-                print_cert_json(&info);
+                print_cert_json(&results[i]);
             } else if (csv) {
-                print_cert_csv(&info);
+                print_cert_csv(&results[i]);
             } else if (oneline) {
-                print_cert_oneline(&info, warn_days);
+                print_cert_oneline(&results[i], warn_days);
             } else {
-                print_cert_normal(&info, warn_days, verbose);
+                print_cert_normal(&results[i], warn_days, verbose);
             }
         }
     }
