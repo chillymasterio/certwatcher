@@ -194,6 +194,10 @@ typedef struct {
 
     /* TLS version as number (10=1.0, 11=1.1, 12=1.2, 13=1.3) */
     int tls_version_num;
+
+    /* OCSP stapling */
+    int ocsp_stapled;
+    int ocsp_status;  /* V_OCSP_CERTSTATUS_GOOD / REVOKED / UNKNOWN */
 } cert_info_t;
 
 /* ── STARTTLS helpers ── */
@@ -378,6 +382,7 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     if (!ssl) { SSL_CTX_free(ctx); closesocket(sock); return -1; }
 
     SSL_set_fd(ssl, (int)sock);
+    SSL_set_tlsext_status_type(ssl, TLSEXT_STATUSTYPE_ocsp);
     /* Set SNI unless explicitly disabled (sni_name == "") */
     if (!sni_name || sni_name[0] != '\0')
         SSL_set_tlsext_host_name(ssl, (char *)(sni_name ? sni_name : host));
@@ -414,6 +419,32 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
         strncpy(info->verify_error,
                 X509_verify_cert_error_string(info->verify_result),
                 sizeof(info->verify_error) - 1);
+    }
+
+    /* OCSP stapling check */
+    {
+        const unsigned char *resp_data;
+        long resp_len = SSL_get_tlsext_status_ocsp_resp(ssl, &resp_data);
+        if (resp_len > 0 && resp_data) {
+            info->ocsp_stapled = 1;
+            OCSP_RESPONSE *ocsp = d2i_OCSP_RESPONSE(NULL, &resp_data, resp_len);
+            if (ocsp) {
+                OCSP_BASICRESP *basic = OCSP_response_get1_basic(ocsp);
+                if (basic) {
+                    int status = -1, reason = 0;
+                    ASN1_GENERALIZEDTIME *rev = NULL, *this_upd = NULL, *next_upd = NULL;
+                    if (OCSP_resp_count(basic) > 0) {
+                        OCSP_SINGLERESP *single = OCSP_resp_get0(basic, 0);
+                        if (single) {
+                            status = OCSP_single_get0_status(single, &reason, &rev, &this_upd, &next_upd);
+                            info->ocsp_status = status;
+                        }
+                    }
+                    OCSP_BASICRESP_free(basic);
+                }
+                OCSP_RESPONSE_free(ocsp);
+            }
+        }
     }
 
     /* Get certificate */
@@ -612,6 +643,16 @@ static void print_cert_normal(const cert_info_t *info, int warn_days, int verbos
     printf("  Signature:   %s\n", info->sig_algo);
     printf("  TLS:         %s (%s, %d bits)\n",
            info->tls_version, info->cipher, info->cipher_bits);
+
+    if (info->ocsp_stapled) {
+        const char *ocsp_str = "unknown";
+        const char *ocsp_color = C_YELLOW;
+        if (info->ocsp_status == V_OCSP_CERTSTATUS_GOOD) { ocsp_str = "good"; ocsp_color = C_GREEN; }
+        else if (info->ocsp_status == V_OCSP_CERTSTATUS_REVOKED) { ocsp_str = "REVOKED"; ocsp_color = C_RED; }
+        printf("  OCSP:        %s%s%s (stapled)\n", ocsp_color, ocsp_str, C_RESET);
+    } else {
+        printf("  OCSP:        %snot stapled%s\n", C_DIM, C_RESET);
+    }
 
     if (info->self_signed)
         printf("  Notice:      %sSelf-signed certificate%s\n", C_YELLOW, C_RESET);
