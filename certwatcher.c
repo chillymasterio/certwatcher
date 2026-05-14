@@ -912,6 +912,7 @@ int main(int argc, char **argv) {
     int key_only = 0;
     int ocsp_only = 0;
     int timing_only = 0;
+    int self_signed_filter = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -991,6 +992,8 @@ int main(int argc, char **argv) {
             ocsp_only = 1;
         } else if (strcmp(argv[i], "--timing-only") == 0) {
             timing_only = 1;
+        } else if (strcmp(argv[i], "--self-signed-only") == 0) {
+            self_signed_filter = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1301,6 +1304,7 @@ int main(int argc, char **argv) {
                C_DIM, "STATUS", "HOST", "DAYS", "TLS", "KEY", "ISSUER", C_RESET);
 
     for (i = 0; i < nresults; i++) {
+        if (self_signed_filter && !results[i].self_signed) continue;
         if (!quiet) {
             if (brief_mode) {
                 const char *status;
