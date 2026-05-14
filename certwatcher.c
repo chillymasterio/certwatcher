@@ -802,6 +802,19 @@ static void print_cert_json(const cert_info_t *info) {
     printf("  }");
 }
 
+static void print_cert_ndjson(const cert_info_t *info) {
+    char na[64];
+    format_time(info->not_after, na, sizeof(na));
+    printf("{\"host\":\"%s\",\"port\":\"%s\",\"cn\":\"%s\",\"days_left\":%d,"
+           "\"expires\":\"%s\",\"key\":\"%s %d\",\"tls\":\"%s\","
+           "\"chain_valid\":%s,\"self_signed\":%s,\"ip\":\"%s\"}\n",
+           info->host, info->port, info->common_name, info->days_left,
+           na, info->key_type, info->key_bits, info->tls_version,
+           info->chain_valid ? "true" : "false",
+           info->self_signed ? "true" : "false",
+           info->ip_addr);
+}
+
 static void print_cert_csv(const cert_info_t *info) {
     char na[64];
     format_time(info->not_after, na, sizeof(na));
@@ -881,6 +894,7 @@ int main(int argc, char **argv) {
     int oneline = 0;
     int csv = 0;
     int json = 0;
+    int ndjson = 0;
     int expired_only = 0;
     int exit_warn = 0;
     int quiet = 0;
@@ -986,6 +1000,8 @@ int main(int argc, char **argv) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
             csv = 1;
+        } else if (strcmp(argv[i], "--ndjson") == 0) {
+            ndjson = 1;
         } else if (strcmp(argv[i], "--json") == 0) {
             json = 1;
         } else if (strncmp(argv[i], "--color=", 8) == 0) {
@@ -1254,6 +1270,8 @@ int main(int argc, char **argv) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
             } else if (pem_output) {
                 printf("# %s:%s\n%s", results[i].host, results[i].port, results[i].pem);
+            } else if (ndjson) {
+                print_cert_ndjson(&results[i]);
             } else if (json) {
                 if (i > 0) printf(",\n");
                 print_cert_json(&results[i]);
