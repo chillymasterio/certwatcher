@@ -691,6 +691,7 @@ int main(int argc, char **argv) {
     int expired_only = 0;
     int exit_warn = 0;
     int quiet = 0;
+    const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
 
@@ -716,6 +717,8 @@ int main(int argc, char **argv) {
             verbose = 1;
         } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
             quiet = 1;
+        } else if ((strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) && i + 1 < argc) {
+            output_file = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -775,6 +778,16 @@ int main(int argc, char **argv) {
     if (nhost == 0) {
         usage(argv[0]);
         return 1;
+    }
+
+    /* Redirect output to file if requested */
+    if (output_file) {
+        FILE *of = freopen(output_file, "w", stdout);
+        if (!of) {
+            fprintf(stderr, "Cannot open output file: %s\n", output_file);
+            return 1;
+        }
+        use_color = 0;
     }
 
     /* Init */
