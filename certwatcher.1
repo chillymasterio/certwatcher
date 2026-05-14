@@ -1,4 +1,4 @@
-.TH CERTWATCHER 1 "2026-05-14" "certwatcher 1.0.0" "User Commands"
+.TH CERTWATCHER 1 "2026-05-15" "certwatcher 1.3.0" "User Commands"
 .SH NAME
 certwatcher \- SSL/TLS certificate monitoring tool
 .SH SYNOPSIS
@@ -72,6 +72,27 @@ Flag hostname mismatches as warnings.
 .BI \-\-starttls " protocol"
 Perform STARTTLS negotiation before TLS handshake. Supported protocols:
 smtp, imap, ftp.
+.TP
+.B \-\-brief
+Compact status overview: hostname, status (OK/WARN/EXPIRED/ERROR), and days remaining.
+.TP
+.B \-\-fingerprint
+Print only the SHA256 fingerprint for each host.
+.TP
+.B \-\-issuer\-only
+Print only the issuer for each host.
+.TP
+.B \-\-san\-list
+Print all Subject Alternative Names for each host.
+.TP
+.B \-\-ndjson
+Newline-delimited JSON output (one object per host).
+.TP
+.B \-\-version\-json
+Print version as JSON.
+.TP
+.B \-\-color=\fImode\fR
+Color mode: always, never, or auto (default).
 .TP
 .B \-V, \-\-version
 Show version and exit.
