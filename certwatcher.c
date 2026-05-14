@@ -378,7 +378,9 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     if (!ssl) { SSL_CTX_free(ctx); closesocket(sock); return -1; }
 
     SSL_set_fd(ssl, (int)sock);
-    SSL_set_tlsext_host_name(ssl, (char *)(sni_name ? sni_name : host));
+    /* Set SNI unless explicitly disabled (sni_name == "") */
+    if (!sni_name || sni_name[0] != '\0')
+        SSL_set_tlsext_host_name(ssl, (char *)(sni_name ? sni_name : host));
 
     if (SSL_connect(ssl) != 1) {
         SSL_free(ssl);
@@ -810,6 +812,8 @@ int main(int argc, char **argv) {
             hostfile = argv[++i];
         } else if (strcmp(argv[i], "-s") == 0 && i + 1 < argc) {
             sni = argv[++i];
+        } else if (strcmp(argv[i], "--no-sni") == 0) {
+            sni = "";
         } else if (strcmp(argv[i], "-v") == 0) {
             verbose = 1;
         } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
