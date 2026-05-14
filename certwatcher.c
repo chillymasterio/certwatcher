@@ -50,6 +50,7 @@
 /* ── Color output ── */
 
 static int use_color = 1;
+static int g_af_family = AF_UNSPEC;
 
 #define C_RED     (use_color ? "\033[31m" : "")
 #define C_GREEN   (use_color ? "\033[32m" : "")
@@ -275,7 +276,7 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
 
     /* Resolve */
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = g_af_family;
     hints.ai_socktype = SOCK_STREAM;
 
     if (getaddrinfo(host, port, &hints, &res) != 0)
@@ -856,6 +857,10 @@ int main(int argc, char **argv) {
             sni = argv[++i];
         } else if (strcmp(argv[i], "--no-sni") == 0) {
             sni = "";
+        } else if (strcmp(argv[i], "-4") == 0 || strcmp(argv[i], "--ipv4") == 0) {
+            g_af_family = AF_INET;
+        } else if (strcmp(argv[i], "-6") == 0 || strcmp(argv[i], "--ipv6") == 0) {
+            g_af_family = AF_INET6;
         } else if (strcmp(argv[i], "-v") == 0) {
             verbose = 1;
         } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
