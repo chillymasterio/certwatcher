@@ -120,6 +120,13 @@ certwatcher --exit-warn -w 14 -f hosts.txt || send-alert
 | `--fail-ocsp` | Fail on OCSP revoked status |
 | `--starttls <proto>` | STARTTLS protocol (smtp/imap/ftp/pop3) |
 | `--format-date <fmt>` | Custom strftime date format |
+| `--brief` | Compact status overview per host |
+| `--fingerprint` | SHA256 fingerprint only output |
+| `--issuer-only` | Issuer-only output per host |
+| `--san-list` | Show all SANs per host |
+| `--ndjson` | Newline-delimited JSON output |
+| `--version-json` | Version info as JSON |
+| `--color=MODE` | Color: always/never/auto |
 | `-V` | Show version |
 
 ### Host file format
