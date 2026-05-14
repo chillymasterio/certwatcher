@@ -909,6 +909,7 @@ int main(int argc, char **argv) {
     int subject_only = 0;
     int cipher_only = 0;
     int serial_only = 0;
+    int key_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -982,6 +983,8 @@ int main(int argc, char **argv) {
             cipher_only = 1;
         } else if (strcmp(argv[i], "--serial-only") == 0) {
             serial_only = 1;
+        } else if (strcmp(argv[i], "--key-only") == 0) {
+            key_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1320,6 +1323,9 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
+            } else if (key_only) {
+                printf("%s:%s %s %d bits\n", results[i].host, results[i].port,
+                       results[i].key_type, results[i].key_bits);
             } else if (serial_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].serial);
             } else if (cipher_only) {
