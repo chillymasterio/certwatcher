@@ -191,6 +191,9 @@ typedef struct {
 
     /* Self-signed */
     int self_signed;
+
+    /* TLS version as number (10=1.0, 11=1.1, 12=1.2, 13=1.3) */
+    int tls_version_num;
 } cert_info_t;
 
 /* ── STARTTLS helpers ── */
@@ -394,6 +397,12 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     strncpy(info->tls_version, SSL_get_version(ssl), sizeof(info->tls_version) - 1);
     strncpy(info->cipher, SSL_get_cipher_name(ssl), sizeof(info->cipher) - 1);
     info->cipher_bits = SSL_get_cipher_bits(ssl, NULL);
+
+    /* Parse TLS version number */
+    if (strstr(info->tls_version, "1.3")) info->tls_version_num = 13;
+    else if (strstr(info->tls_version, "1.2")) info->tls_version_num = 12;
+    else if (strstr(info->tls_version, "1.1")) info->tls_version_num = 11;
+    else if (strstr(info->tls_version, "1.0")) info->tls_version_num = 10;
 
     /* Verify */
     info->verify_result = SSL_get_verify_result(ssl);
@@ -778,6 +787,7 @@ int main(int argc, char **argv) {
     int parallel = 0;
     int count_only = 0;
     int verify_strict = 0;
+    int min_tls = 0;  /* 0=any, 10=1.0, 11=1.1, 12=1.2, 13=1.3 */
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -818,6 +828,13 @@ int main(int argc, char **argv) {
             count_only = 1;
         } else if (strcmp(argv[i], "--verify") == 0) {
             verify_strict = 1;
+        } else if (strcmp(argv[i], "--min-tls") == 0 && i + 1 < argc) {
+            i++;
+            if (strcmp(argv[i], "1.0") == 0) min_tls = 10;
+            else if (strcmp(argv[i], "1.1") == 0) min_tls = 11;
+            else if (strcmp(argv[i], "1.2") == 0) min_tls = 12;
+            else if (strcmp(argv[i], "1.3") == 0) min_tls = 13;
+            else { fprintf(stderr, "Unknown TLS version: %s\n", argv[i]); return 1; }
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -956,7 +973,8 @@ int main(int argc, char **argv) {
             }
 
             cert_info_t *info = &par_results[i];
-            if (info->days_left <= warn_days || (match_host && !info->hostname_match)) {
+            if (info->days_left <= warn_days || (match_host && !info->hostname_match)
+                || (min_tls && info->tls_version_num < min_tls)) {
                 any_warn = 1;
                 count_warn++;
             } else {
@@ -988,7 +1006,8 @@ int main(int argc, char **argv) {
                 continue;
             }
 
-            if (info.days_left <= warn_days || (match_host && !info.hostname_match)) {
+            if (info.days_left <= warn_days || (match_host && !info.hostname_match)
+                || (min_tls && info.tls_version_num < min_tls)) {
                 any_warn = 1;
                 count_warn++;
             } else {
