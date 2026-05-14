@@ -206,7 +206,7 @@ typedef struct {
 
 /* ── STARTTLS helpers ── */
 
-enum starttls_proto { STARTTLS_NONE = 0, STARTTLS_SMTP, STARTTLS_IMAP, STARTTLS_FTP };
+enum starttls_proto { STARTTLS_NONE = 0, STARTTLS_SMTP, STARTTLS_IMAP, STARTTLS_FTP, STARTTLS_POP3 };
 
 static int do_starttls(SOCKET sock, enum starttls_proto proto) {
     char buf[1024];
@@ -249,6 +249,16 @@ static int do_starttls(SOCKET sock, enum starttls_proto proto) {
         if (n <= 0) return -1;
         buf[n] = '\0';
         if (strncmp(buf, "234", 3) != 0) return -1;
+        break;
+
+    case STARTTLS_POP3:
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        send(sock, "STLS\r\n", 6, 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        buf[n] = '\0';
+        if (strncmp(buf, "+OK", 3) != 0) return -1;
         break;
 
     case STARTTLS_NONE:
@@ -935,8 +945,9 @@ int main(int argc, char **argv) {
             if (strcmp(argv[i], "smtp") == 0) starttls = STARTTLS_SMTP;
             else if (strcmp(argv[i], "imap") == 0) starttls = STARTTLS_IMAP;
             else if (strcmp(argv[i], "ftp") == 0) starttls = STARTTLS_FTP;
+            else if (strcmp(argv[i], "pop3") == 0) starttls = STARTTLS_POP3;
             else {
-                fprintf(stderr, "Unknown STARTTLS protocol: %s (use smtp, imap, ftp)\n", argv[i]);
+                fprintf(stderr, "Unknown STARTTLS protocol: %s (use smtp, imap, ftp, pop3)\n", argv[i]);
                 return 1;
             }
         } else if (argv[i][0] == '-') {
