@@ -176,6 +176,9 @@ typedef struct {
     char cipher[128];
     int cipher_bits;
 
+    /* PEM data */
+    char pem[8192];
+
     /* Timing */
     double connect_ms;
     double tls_ms;
@@ -497,6 +500,22 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
         }
     }
 
+    /* Extract PEM */
+    {
+        BIO *bio = BIO_new(BIO_s_mem());
+        if (bio) {
+            if (PEM_write_bio_X509(bio, cert)) {
+                BUF_MEM *bptr;
+                BIO_get_mem_ptr(bio, &bptr);
+                if (bptr && bptr->length > 0 && bptr->length < sizeof(info->pem)) {
+                    memcpy(info->pem, bptr->data, bptr->length);
+                    info->pem[bptr->length] = '\0';
+                }
+            }
+            BIO_free(bio);
+        }
+    }
+
     ret = 0;
 
     X509_free(cert);
@@ -692,6 +711,7 @@ int main(int argc, char **argv) {
     int exit_warn = 0;
     int quiet = 0;
     int sort_by_expiry = 0;
+    int pem_output = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -722,6 +742,8 @@ int main(int argc, char **argv) {
             output_file = argv[++i];
         } else if (strcmp(argv[i], "--sort") == 0) {
             sort_by_expiry = 1;
+        } else if (strcmp(argv[i], "--pem") == 0) {
+            pem_output = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -805,7 +827,7 @@ int main(int argc, char **argv) {
     int count_ok = 0, count_warn = 0, count_err = 0;
 
     /* Collect all results */
-    cert_info_t results[MAX_HOSTS];
+    static cert_info_t results[MAX_HOSTS];
     int nresults = 0;
 
     for (i = 0; i < nhost; i++) {
@@ -873,7 +895,9 @@ int main(int argc, char **argv) {
 
     for (i = 0; i < nresults; i++) {
         if (!quiet) {
-            if (json) {
+            if (pem_output) {
+                printf("# %s:%s\n%s", results[i].host, results[i].port, results[i].pem);
+            } else if (json) {
                 if (i > 0) printf(",\n");
                 print_cert_json(&results[i]);
             } else if (csv) {
