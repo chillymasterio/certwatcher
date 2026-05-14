@@ -196,6 +196,9 @@ typedef struct {
     /* Self-signed */
     int self_signed;
 
+    /* Error detail */
+    char error_msg[256];
+
     /* TLS version as number (10=1.0, 11=1.1, 12=1.2, 13=1.3) */
     int tls_version_num;
 
@@ -304,8 +307,10 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     hints.ai_family = g_af_family;
     hints.ai_socktype = SOCK_STREAM;
 
-    if (getaddrinfo(host, port, &hints, &res) != 0)
+    if (getaddrinfo(host, port, &hints, &res) != 0) {
+        snprintf(info->error_msg, sizeof(info->error_msg), "DNS resolution failed");
         return -1;
+    }
 
     /* Extract resolved IP address */
     if (res->ai_family == AF_INET) {
@@ -350,6 +355,7 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
             FD_ZERO(&wfds);
             FD_SET(sock, &wfds);
             if (select((int)sock + 1, NULL, &wfds, NULL, &tv) <= 0) {
+                snprintf(info->error_msg, sizeof(info->error_msg), "connection timed out");
                 closesocket(sock);
                 freeaddrinfo(res);
                 return -1;
@@ -417,6 +423,12 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
         SSL_set_tlsext_host_name(ssl, (char *)(sni_name ? sni_name : host));
 
     if (SSL_connect(ssl) != 1) {
+        unsigned long err = ERR_get_error();
+        if (err)
+            snprintf(info->error_msg, sizeof(info->error_msg), "TLS handshake failed: %s",
+                     ERR_reason_error_string(err));
+        else
+            snprintf(info->error_msg, sizeof(info->error_msg), "TLS handshake failed");
         SSL_free(ssl);
         SSL_CTX_free(ctx);
         closesocket(sock);
@@ -1086,11 +1098,12 @@ int main(int argc, char **argv) {
             pthread_join(threads[i], NULL);
             if (tasks[i].rc != 0) {
                 if (!quiet && !json && !csv) {
+                    const char *emsg = par_results[i].error_msg[0] ? par_results[i].error_msg : "connection failed";
                     if (oneline)
-                        printf("%sERROR%s   %-40s  connection failed\n", C_RED, C_RESET, parsed_hosts[i]);
+                        printf("%sERROR%s   %-40s  %s\n", C_RED, C_RESET, parsed_hosts[i], emsg);
                     else
-                        printf("\n%s%s:%s%s\n  %sConnection failed%s\n",
-                               C_BOLD, parsed_hosts[i], parsed_ports[i], C_RESET, C_RED, C_RESET);
+                        printf("\n%s%s:%s%s\n  %s%s%s\n",
+                               C_BOLD, parsed_hosts[i], parsed_ports[i], C_RESET, C_RED, emsg, C_RESET);
                 }
                 any_error = 1;
                 count_err++;
@@ -1126,11 +1139,12 @@ int main(int argc, char **argv) {
 
             if (rc != 0) {
                 if (!quiet && !json && !csv) {
+                    const char *emsg = info.error_msg[0] ? info.error_msg : "connection failed";
                     if (oneline)
-                        printf("%sERROR%s   %-40s  connection failed\n", C_RED, C_RESET, parsed_hosts[i]);
+                        printf("%sERROR%s   %-40s  %s\n", C_RED, C_RESET, parsed_hosts[i], emsg);
                     else
-                        printf("\n%s%s:%s%s\n  %sConnection failed%s\n",
-                               C_BOLD, parsed_hosts[i], parsed_ports[i], C_RESET, C_RED, C_RESET);
+                        printf("\n%s%s:%s%s\n  %s%s%s\n",
+                               C_BOLD, parsed_hosts[i], parsed_ports[i], C_RESET, C_RED, emsg, C_RESET);
                 }
                 any_error = 1;
                 count_err++;
