@@ -988,6 +988,10 @@ int main(int argc, char **argv) {
             csv = 1;
         } else if (strcmp(argv[i], "--json") == 0) {
             json = 1;
+        } else if (strncmp(argv[i], "--color=", 8) == 0) {
+            const char *val = argv[i] + 8;
+            if (strcmp(val, "never") == 0) use_color = 0;
+            else if (strcmp(val, "always") == 0) use_color = 1;
         } else if (strcmp(argv[i], "--no-color") == 0) {
             use_color = 0;
         } else if (strcmp(argv[i], "--expired-only") == 0) {
