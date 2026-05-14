@@ -34,6 +34,7 @@
   #include <unistd.h>
   #include <fcntl.h>
   #include <errno.h>
+  #include <arpa/inet.h>
   #define closesocket close
   typedef int SOCKET;
   #define INVALID_SOCKET (-1)
@@ -139,6 +140,7 @@ typedef struct {
     char port[16];
     int connected;
     int ssl_ok;
+    char ip_addr[64];
 
     /* Subject */
     char subject[512];
@@ -252,6 +254,15 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
 
     if (getaddrinfo(host, port, &hints, &res) != 0)
         return -1;
+
+    /* Extract resolved IP address */
+    if (res->ai_family == AF_INET) {
+        struct sockaddr_in *sa = (struct sockaddr_in *)res->ai_addr;
+        inet_ntop(AF_INET, &sa->sin_addr, info->ip_addr, sizeof(info->ip_addr));
+    } else if (res->ai_family == AF_INET6) {
+        struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)res->ai_addr;
+        inet_ntop(AF_INET6, &sa6->sin6_addr, info->ip_addr, sizeof(info->ip_addr));
+    }
 
     /* Connect */
     sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
@@ -530,6 +541,8 @@ static void print_cert_normal(const cert_info_t *info, int warn_days, int verbos
     }
 
     if (verbose) {
+        if (info->ip_addr[0])
+            printf("  IP:          %s\n", info->ip_addr);
         printf("  Version:     X.509v%d\n", info->version);
         printf("  Serial:      %s\n", info->serial);
         printf("  SHA-256:     %s\n", info->fingerprint_sha256);
