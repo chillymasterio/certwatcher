@@ -911,6 +911,7 @@ int main(int argc, char **argv) {
     int serial_only = 0;
     int key_only = 0;
     int ocsp_only = 0;
+    int timing_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -988,6 +989,8 @@ int main(int argc, char **argv) {
             key_only = 1;
         } else if (strcmp(argv[i], "--ocsp-only") == 0) {
             ocsp_only = 1;
+        } else if (strcmp(argv[i], "--timing-only") == 0) {
+            timing_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1326,6 +1329,10 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
+            } else if (timing_only) {
+                printf("%s:%s tcp=%.0fms tls=%.0fms total=%.0fms\n",
+                       results[i].host, results[i].port,
+                       results[i].connect_ms, results[i].tls_ms, results[i].total_ms);
             } else if (ocsp_only) {
                 const char *status = "not stapled";
                 if (results[i].ocsp_stapled) {
