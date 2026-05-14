@@ -210,7 +210,7 @@ typedef struct {
 
 /* ── STARTTLS helpers ── */
 
-enum starttls_proto { STARTTLS_NONE = 0, STARTTLS_SMTP, STARTTLS_IMAP, STARTTLS_FTP, STARTTLS_POP3, STARTTLS_XMPP };
+enum starttls_proto { STARTTLS_NONE = 0, STARTTLS_SMTP, STARTTLS_IMAP, STARTTLS_FTP, STARTTLS_POP3, STARTTLS_XMPP, STARTTLS_LDAP };
 
 static int do_starttls(SOCKET sock, enum starttls_proto proto) {
     char buf[1024];
@@ -280,6 +280,20 @@ static int do_starttls(SOCKET sock, enum starttls_proto proto) {
         if (strstr(buf, "proceed") == NULL) return -1;
         break;
 
+    case STARTTLS_LDAP: {
+        /* LDAP extended operation for StartTLS (OID 1.3.6.1.4.1.1466.20037) */
+        unsigned char ldap_starttls[] = {
+            0x30, 0x1d, 0x02, 0x01, 0x01, 0x77, 0x18, 0x80,
+            0x16, 0x31, 0x2e, 0x33, 0x2e, 0x36, 0x2e, 0x31,
+            0x2e, 0x34, 0x2e, 0x31, 0x2e, 0x31, 0x34, 0x36,
+            0x36, 0x2e, 0x32, 0x30, 0x30, 0x33, 0x37
+        };
+        send(sock, (char *)ldap_starttls, sizeof(ldap_starttls), 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        break;
+    }
+
     case STARTTLS_NONE:
     default:
         break;
@@ -296,6 +310,7 @@ static const char *auto_port_for_starttls(enum starttls_proto proto) {
     case STARTTLS_FTP:  return "21";
     case STARTTLS_POP3: return "110";
     case STARTTLS_XMPP: return "5222";
+    case STARTTLS_LDAP: return "389";
     default: return NULL;
     }
 }
@@ -1079,8 +1094,9 @@ int main(int argc, char **argv) {
             else if (strcmp(argv[i], "ftp") == 0) starttls = STARTTLS_FTP;
             else if (strcmp(argv[i], "pop3") == 0) starttls = STARTTLS_POP3;
             else if (strcmp(argv[i], "xmpp") == 0) starttls = STARTTLS_XMPP;
+            else if (strcmp(argv[i], "ldap") == 0) starttls = STARTTLS_LDAP;
             else {
-                fprintf(stderr, "Unknown STARTTLS protocol: %s (use smtp, imap, ftp, pop3, xmpp)\n", argv[i]);
+                fprintf(stderr, "Unknown STARTTLS protocol: %s (use smtp, imap, ftp, pop3, xmpp, ldap)\n", argv[i]);
                 return 1;
             }
         } else if (argv[i][0] == '-') {
