@@ -741,7 +741,14 @@ static void print_cert_json(const cert_info_t *info) {
     printf("    \"serial\": \"%s\",\n", info->serial);
     printf("    \"fingerprint_sha256\": \"%s\",\n", info->fingerprint_sha256);
     printf("    \"san_count\": %d,\n", info->san_count);
-    printf("    \"version\": %d\n", info->version);
+    printf("    \"version\": %d,\n", info->version);
+    printf("    \"self_signed\": %s,\n", info->self_signed ? "true" : "false");
+    printf("    \"hostname_match\": %s,\n", info->hostname_match ? "true" : "false");
+    printf("    \"ocsp_stapled\": %s,\n", info->ocsp_stapled ? "true" : "false");
+    printf("    \"connect_ms\": %.1f,\n", info->connect_ms);
+    printf("    \"tls_ms\": %.1f,\n", info->tls_ms);
+    printf("    \"total_ms\": %.1f,\n", info->total_ms);
+    printf("    \"ip\": \"%s\"\n", info->ip_addr);
     printf("  }");
 }
 
