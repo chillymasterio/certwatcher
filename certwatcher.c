@@ -109,6 +109,29 @@ static void format_time(time_t t, char *buf, size_t len) {
     strftime(buf, len, "%Y-%m-%d %H:%M:%S UTC", tm);
 }
 
+static void format_relative(int days, char *buf, size_t len) {
+    if (days < 0) {
+        int d = -days;
+        if (d == 1) snprintf(buf, len, "yesterday");
+        else if (d < 7) snprintf(buf, len, "%d days ago", d);
+        else if (d < 30) snprintf(buf, len, "%d weeks ago", d / 7);
+        else if (d < 365) snprintf(buf, len, "%d months ago", d / 30);
+        else snprintf(buf, len, "%d years ago", d / 365);
+    } else if (days == 0) {
+        snprintf(buf, len, "today");
+    } else if (days == 1) {
+        snprintf(buf, len, "tomorrow");
+    } else if (days < 7) {
+        snprintf(buf, len, "in %d days", days);
+    } else if (days < 30) {
+        snprintf(buf, len, "in %d weeks", days / 7);
+    } else if (days < 365) {
+        snprintf(buf, len, "in %d months", days / 30);
+    } else {
+        snprintf(buf, len, "in %d years", days / 365);
+    }
+}
+
 /* ── Certificate info struct ── */
 
 typedef struct {
@@ -476,11 +499,13 @@ static void print_cert_normal(const cert_info_t *info, int warn_days, int verbos
     }
 
     printf("\n%s%s:%s%s\n", C_BOLD, info->host, info->port, C_RESET);
+    char rel[64];
+    format_relative(info->days_left, rel, sizeof(rel));
     printf("  Status:      %s%s%s", status_color, status_text, C_RESET);
     if (info->days_left >= 0)
-        printf(" (%d days remaining)", info->days_left);
+        printf(" (%d days remaining, expires %s)", info->days_left, rel);
     else
-        printf(" (expired %d days ago)", -info->days_left);
+        printf(" (expired %d days ago, %s)", -info->days_left, rel);
     printf("\n");
 
     printf("  Subject:     %s\n", info->common_name);
