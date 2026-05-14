@@ -902,6 +902,7 @@ int main(int argc, char **argv) {
     int pem_output = 0;
     int fingerprint_only = 0;
     int issuer_only = 0;
+    int san_list = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -961,6 +962,8 @@ int main(int argc, char **argv) {
             fingerprint_only = 1;
         } else if (strcmp(argv[i], "--issuer-only") == 0) {
             issuer_only = 1;
+        } else if (strcmp(argv[i], "--san-list") == 0) {
+            san_list = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1276,6 +1279,8 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
+            } else if (san_list) {
+                printf("%s:%s %s\n", results[i].host, results[i].port, results[i].sans);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
             } else if (pem_output) {
