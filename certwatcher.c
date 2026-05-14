@@ -905,6 +905,7 @@ int main(int argc, char **argv) {
     int san_list = 0;
     int brief_mode = 0;
     int chain_only = 0;
+    int expiry_date_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -970,6 +971,8 @@ int main(int argc, char **argv) {
             brief_mode = 1;
         } else if (strcmp(argv[i], "--chain") == 0) {
             chain_only = 1;
+        } else if (strcmp(argv[i], "--expiry-date") == 0) {
+            expiry_date_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1310,6 +1313,10 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
             } else if (san_list) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].sans);
+            } else if (expiry_date_only) {
+                char buf[64];
+                format_time(results[i].not_after, buf, sizeof(buf));
+                printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
             } else if (pem_output) {
