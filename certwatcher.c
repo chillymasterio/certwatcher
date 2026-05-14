@@ -790,6 +790,7 @@ int main(int argc, char **argv) {
     int count_only = 0;
     int verify_strict = 0;
     int min_tls = 0;  /* 0=any, 10=1.0, 11=1.1, 12=1.2, 13=1.3 */
+    int min_key_bits = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -839,6 +840,8 @@ int main(int argc, char **argv) {
             else if (strcmp(argv[i], "1.2") == 0) min_tls = 12;
             else if (strcmp(argv[i], "1.3") == 0) min_tls = 13;
             else { fprintf(stderr, "Unknown TLS version: %s\n", argv[i]); return 1; }
+        } else if (strcmp(argv[i], "--min-key") == 0 && i + 1 < argc) {
+            min_key_bits = atoi(argv[++i]);
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -978,7 +981,8 @@ int main(int argc, char **argv) {
 
             cert_info_t *info = &par_results[i];
             if (info->days_left <= warn_days || (match_host && !info->hostname_match)
-                || (min_tls && info->tls_version_num < min_tls)) {
+                || (min_tls && info->tls_version_num < min_tls)
+                || (min_key_bits && info->key_bits < min_key_bits)) {
                 any_warn = 1;
                 count_warn++;
             } else {
@@ -1011,7 +1015,8 @@ int main(int argc, char **argv) {
             }
 
             if (info.days_left <= warn_days || (match_host && !info.hostname_match)
-                || (min_tls && info.tls_version_num < min_tls)) {
+                || (min_tls && info.tls_version_num < min_tls)
+                || (min_key_bits && info.key_bits < min_key_bits)) {
                 any_warn = 1;
                 count_warn++;
             } else {
