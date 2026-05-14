@@ -690,6 +690,7 @@ int main(int argc, char **argv) {
     int json = 0;
     int expired_only = 0;
     int exit_warn = 0;
+    int quiet = 0;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
 
@@ -713,6 +714,8 @@ int main(int argc, char **argv) {
             sni = argv[++i];
         } else if (strcmp(argv[i], "-v") == 0) {
             verbose = 1;
+        } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
+            quiet = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -808,7 +811,7 @@ int main(int argc, char **argv) {
         int rc = fetch_cert(h, p, timeout_sec, sni, starttls, &info);
 
         if (rc != 0) {
-            if (!json && !csv) {
+            if (!quiet && !json && !csv) {
                 if (oneline)
                     printf("%sERROR%s   %-40s  connection failed\n", C_RED, C_RESET, h);
                 else
@@ -824,15 +827,17 @@ int main(int argc, char **argv) {
         if (expired_only && info.days_left > warn_days)
             continue;
 
-        if (json) {
-            if (i > 0) printf(",\n");
-            print_cert_json(&info);
-        } else if (csv) {
-            print_cert_csv(&info);
-        } else if (oneline) {
-            print_cert_oneline(&info, warn_days);
-        } else {
-            print_cert_normal(&info, warn_days, verbose);
+        if (!quiet) {
+            if (json) {
+                if (i > 0) printf(",\n");
+                print_cert_json(&info);
+            } else if (csv) {
+                print_cert_csv(&info);
+            } else if (oneline) {
+                print_cert_oneline(&info, warn_days);
+            } else {
+                print_cert_normal(&info, warn_days, verbose);
+            }
         }
     }
 
