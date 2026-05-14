@@ -6,7 +6,8 @@ set(CMAKE_C_STANDARD 99)
 find_package(OpenSSL REQUIRED)
 
 add_executable(certwatcher certwatcher.c)
-target_link_libraries(certwatcher OpenSSL::SSL OpenSSL::Crypto)
+find_package(Threads REQUIRED)
+target_link_libraries(certwatcher OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 
 if(WIN32)
     target_link_libraries(certwatcher ws2_32)

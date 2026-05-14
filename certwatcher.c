@@ -5,7 +5,7 @@
  * License: MIT
  */
 
-#define _POSIX_C_SOURCE 200112L
+#define _POSIX_C_SOURCE 200809L
 #include <strings.h>
 
 #include <stdio.h>
@@ -36,6 +36,7 @@
   #include <fcntl.h>
   #include <errno.h>
   #include <arpa/inet.h>
+  #include <pthread.h>
   #define closesocket close
   typedef int SOCKET;
   #define INVALID_SOCKET (-1)
@@ -697,6 +698,25 @@ static void print_cert_csv(const cert_info_t *info) {
            info->tls_version, info->chain_valid);
 }
 
+/* ── Parallel checking ── */
+
+typedef struct {
+    const char *host;
+    const char *port;
+    int timeout_sec;
+    const char *sni;
+    enum starttls_proto starttls;
+    cert_info_t *result;
+    int rc;
+} check_task_t;
+
+static void *check_thread(void *arg) {
+    check_task_t *task = (check_task_t *)arg;
+    task->rc = fetch_cert(task->host, task->port, task->timeout_sec,
+                          task->sni, task->starttls, task->result);
+    return NULL;
+}
+
 /* ── Usage ── */
 
 static void usage(const char *prog) {
@@ -750,6 +770,7 @@ int main(int argc, char **argv) {
     int sort_by_expiry = 0;
     int pem_output = 0;
     int match_host = 0;
+    int parallel = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -784,6 +805,8 @@ int main(int argc, char **argv) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
             match_host = 1;
+        } else if (strcmp(argv[i], "--parallel") == 0) {
+            parallel = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -870,47 +893,101 @@ int main(int argc, char **argv) {
     static cert_info_t results[MAX_HOSTS];
     int nresults = 0;
 
+    /* Parse host:port for all hosts */
+    static char parsed_hosts[MAX_HOSTS][256];
+    static char parsed_ports[MAX_HOSTS][16];
     for (i = 0; i < nhost; i++) {
-        /* Parse host:port */
-        char host_buf[256];
         const char *h = hosts[i];
-        const char *p = port;
         const char *colon = strrchr(h, ':');
         if (colon && colon != h) {
             size_t hlen = colon - h;
-            if (hlen >= sizeof(host_buf)) hlen = sizeof(host_buf) - 1;
-            memcpy(host_buf, h, hlen);
-            host_buf[hlen] = '\0';
-            h = host_buf;
-            p = colon + 1;
-        }
-
-        cert_info_t info;
-        int rc = fetch_cert(h, p, timeout_sec, sni, starttls, &info);
-
-        if (rc != 0) {
-            if (!quiet && !json && !csv) {
-                if (oneline)
-                    printf("%sERROR%s   %-40s  connection failed\n", C_RED, C_RESET, h);
-                else
-                    printf("\n%s%s:%s%s\n  %sConnection failed%s\n", C_BOLD, h, p, C_RESET, C_RED, C_RESET);
-            }
-            any_error = 1;
-            count_err++;
-            continue;
-        }
-
-        if (info.days_left <= warn_days || (match_host && !info.hostname_match)) {
-            any_warn = 1;
-            count_warn++;
+            if (hlen >= sizeof(parsed_hosts[i])) hlen = sizeof(parsed_hosts[i]) - 1;
+            memcpy(parsed_hosts[i], h, hlen);
+            parsed_hosts[i][hlen] = '\0';
+            strncpy(parsed_ports[i], colon + 1, sizeof(parsed_ports[i]) - 1);
         } else {
-            count_ok++;
+            strncpy(parsed_hosts[i], h, sizeof(parsed_hosts[i]) - 1);
+            strncpy(parsed_ports[i], port, sizeof(parsed_ports[i]) - 1);
+        }
+    }
+
+    if (parallel && nhost > 1) {
+        /* Parallel mode: check all hosts concurrently */
+        static cert_info_t par_results[MAX_HOSTS];
+        check_task_t tasks[MAX_HOSTS];
+        pthread_t threads[MAX_HOSTS];
+
+        for (i = 0; i < nhost; i++) {
+            tasks[i].host = parsed_hosts[i];
+            tasks[i].port = parsed_ports[i];
+            tasks[i].timeout_sec = timeout_sec;
+            tasks[i].sni = sni;
+            tasks[i].starttls = starttls;
+            tasks[i].result = &par_results[i];
+            tasks[i].rc = -1;
+            pthread_create(&threads[i], NULL, check_thread, &tasks[i]);
         }
 
-        if (expired_only && info.days_left > warn_days)
-            continue;
+        for (i = 0; i < nhost; i++) {
+            pthread_join(threads[i], NULL);
+            if (tasks[i].rc != 0) {
+                if (!quiet && !json && !csv) {
+                    if (oneline)
+                        printf("%sERROR%s   %-40s  connection failed\n", C_RED, C_RESET, parsed_hosts[i]);
+                    else
+                        printf("\n%s%s:%s%s\n  %sConnection failed%s\n",
+                               C_BOLD, parsed_hosts[i], parsed_ports[i], C_RESET, C_RED, C_RESET);
+                }
+                any_error = 1;
+                count_err++;
+                continue;
+            }
 
-        results[nresults++] = info;
+            cert_info_t *info = &par_results[i];
+            if (info->days_left <= warn_days || (match_host && !info->hostname_match)) {
+                any_warn = 1;
+                count_warn++;
+            } else {
+                count_ok++;
+            }
+
+            if (expired_only && info->days_left > warn_days)
+                continue;
+
+            results[nresults++] = *info;
+        }
+    } else {
+        /* Sequential mode */
+        for (i = 0; i < nhost; i++) {
+            cert_info_t info;
+            int rc = fetch_cert(parsed_hosts[i], parsed_ports[i],
+                                timeout_sec, sni, starttls, &info);
+
+            if (rc != 0) {
+                if (!quiet && !json && !csv) {
+                    if (oneline)
+                        printf("%sERROR%s   %-40s  connection failed\n", C_RED, C_RESET, parsed_hosts[i]);
+                    else
+                        printf("\n%s%s:%s%s\n  %sConnection failed%s\n",
+                               C_BOLD, parsed_hosts[i], parsed_ports[i], C_RESET, C_RED, C_RESET);
+                }
+                any_error = 1;
+                count_err++;
+                continue;
+            }
+
+            if (info.days_left <= warn_days || (match_host && !info.hostname_match)) {
+                any_warn = 1;
+                count_warn++;
+            } else {
+                count_ok++;
+            }
+
+            if (expired_only && info.days_left > warn_days)
+                continue;
+
+            results[nresults++] = info;
+        }
     }
 
     /* Sort by days remaining if requested */

@@ -1,7 +1,7 @@
 CC ?= gcc
 CFLAGS ?= -O2 -Wall -Wextra -std=c99
 LDFLAGS ?=
-LDLIBS ?= -lssl -lcrypto
+LDLIBS ?= -lssl -lcrypto -lpthread
 
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
