@@ -913,6 +913,7 @@ int main(int argc, char **argv) {
     int ocsp_only = 0;
     int timing_only = 0;
     int self_signed_filter = 0;
+    int weak_filter = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -994,6 +995,8 @@ int main(int argc, char **argv) {
             timing_only = 1;
         } else if (strcmp(argv[i], "--self-signed-only") == 0) {
             self_signed_filter = 1;
+        } else if (strcmp(argv[i], "--weak") == 0) {
+            weak_filter = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1305,6 +1308,13 @@ int main(int argc, char **argv) {
 
     for (i = 0; i < nresults; i++) {
         if (self_signed_filter && !results[i].self_signed) continue;
+        if (weak_filter) {
+            int is_weak = 0;
+            if (results[i].tls_version_num > 0 && results[i].tls_version_num < 12) is_weak = 1;
+            if (strcmp(results[i].key_type, "RSA") == 0 && results[i].key_bits < 2048) is_weak = 1;
+            if (strcmp(results[i].key_type, "EC") == 0 && results[i].key_bits < 256) is_weak = 1;
+            if (!is_weak) continue;
+        }
         if (!quiet) {
             if (brief_mode) {
                 const char *status;
