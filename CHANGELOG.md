@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.4.0 (2026-05-15)
+
+### New Features
+- `--chain` to display certificate chain hierarchy
+- `--expiry-date` for raw expiry date output
+- `--subject-only` for minimal subject output
+- `--cipher-only` for TLS version and cipher info
+- `--serial-only` for certificate serial number output
+- `--key-only` for public key type and size
+- `--ocsp-only` for OCSP stapling status
+- `--timing-only` for connection timing breakdown
+- `--sig-algo` for signature algorithm output
+- `--self-signed-only` filter for self-signed certificates
+- `--weak` filter for weak crypto (old TLS, small keys)
+- XMPP STARTTLS protocol support
+- LDAP STARTTLS protocol support
+- Reorganized help text with extraction and filter sections
+
 ## v1.3.0 (2026-05-15)
 
 ### New Features
