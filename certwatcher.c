@@ -268,6 +268,18 @@ static int do_starttls(SOCKET sock, enum starttls_proto proto) {
     return 0;
 }
 
+/* ── Protocol port mapping ── */
+
+static const char *auto_port_for_starttls(enum starttls_proto proto) {
+    switch (proto) {
+    case STARTTLS_SMTP: return "25";
+    case STARTTLS_IMAP: return "143";
+    case STARTTLS_FTP:  return "21";
+    case STARTTLS_POP3: return "110";
+    default: return NULL;
+    }
+}
+
 /* ── Get certificate from host ── */
 
 static int fetch_cert(const char *host, const char *port, int timeout_sec,
@@ -993,6 +1005,12 @@ int main(int argc, char **argv) {
     if (nhost == 0) {
         usage(argv[0]);
         return 1;
+    }
+
+    /* Auto-detect port from STARTTLS protocol if default port unchanged */
+    if (starttls != STARTTLS_NONE && strcmp(port, DEFAULT_PORT) == 0) {
+        const char *auto_p = auto_port_for_starttls(starttls);
+        if (auto_p) port = auto_p;
     }
 
     /* Redirect output to file if requested */
