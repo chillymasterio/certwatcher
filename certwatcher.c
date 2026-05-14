@@ -51,6 +51,7 @@
 
 static int use_color = 1;
 static int g_af_family = AF_UNSPEC;
+static const char *g_ca_file = NULL;
 
 #define C_RED     (use_color ? "\033[31m" : "")
 #define C_GREEN   (use_color ? "\033[32m" : "")
@@ -373,7 +374,10 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     ctx = SSL_CTX_new(TLS_client_method());
     if (!ctx) { closesocket(sock); return -1; }
 
-    SSL_CTX_set_default_verify_paths(ctx);
+    if (g_ca_file)
+        SSL_CTX_load_verify_locations(ctx, g_ca_file, NULL);
+    else
+        SSL_CTX_set_default_verify_paths(ctx);
     if (verify_strict)
         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
     else
@@ -840,6 +844,7 @@ int main(int argc, char **argv) {
     int verify_strict = 0;
     int min_tls = 0;  /* 0=any, 10=1.0, 11=1.1, 12=1.2, 13=1.3 */
     int min_key_bits = 0;
+    const char *ca_file = NULL;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -895,6 +900,8 @@ int main(int argc, char **argv) {
             else { fprintf(stderr, "Unknown TLS version: %s\n", argv[i]); return 1; }
         } else if (strcmp(argv[i], "--min-key") == 0 && i + 1 < argc) {
             min_key_bits = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--ca-file") == 0 && i + 1 < argc) {
+            ca_file = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -967,6 +974,8 @@ int main(int argc, char **argv) {
     }
 
     /* Init */
+    if (ca_file) g_ca_file = ca_file;
+
     detect_color();
     net_init();
     SSL_library_init();
