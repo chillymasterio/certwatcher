@@ -646,6 +646,7 @@ static void print_cert_normal(const cert_info_t *info, int warn_days, int verbos
     format_time(info->not_after, buf, sizeof(buf));
     printf("  Valid until: %s\n", buf);
 
+    printf("  Age:         %d days since issued\n", info->days_since_issue);
     printf("  Key:         %s %d bits\n", info->key_type, info->key_bits);
     printf("  Signature:   %s\n", info->sig_algo);
     printf("  TLS:         %s (%s, %d bits)\n",
