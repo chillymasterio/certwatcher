@@ -945,6 +945,7 @@ int main(int argc, char **argv) {
     int timing_only = 0;
     int self_signed_filter = 0;
     int weak_filter = 0;
+    int sig_algo_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1028,6 +1029,8 @@ int main(int argc, char **argv) {
             self_signed_filter = 1;
         } else if (strcmp(argv[i], "--weak") == 0) {
             weak_filter = 1;
+        } else if (strcmp(argv[i], "--sig-algo") == 0) {
+            sig_algo_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1376,6 +1379,8 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
+            } else if (sig_algo_only) {
+                printf("%s:%s %s\n", results[i].host, results[i].port, results[i].sig_algo);
             } else if (timing_only) {
                 printf("%s:%s tcp=%.0fms tls=%.0fms total=%.0fms\n",
                        results[i].host, results[i].port,
