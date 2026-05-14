@@ -907,6 +907,7 @@ int main(int argc, char **argv) {
     int chain_only = 0;
     int expiry_date_only = 0;
     int subject_only = 0;
+    int cipher_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -976,6 +977,8 @@ int main(int argc, char **argv) {
             expiry_date_only = 1;
         } else if (strcmp(argv[i], "--subject-only") == 0) {
             subject_only = 1;
+        } else if (strcmp(argv[i], "--cipher-only") == 0) {
+            cipher_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1314,6 +1317,9 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
+            } else if (cipher_only) {
+                printf("%s:%s %s %s (%d bits)\n", results[i].host, results[i].port,
+                       results[i].tls_version, results[i].cipher, results[i].cipher_bits);
             } else if (subject_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].subject);
             } else if (san_list) {
