@@ -118,7 +118,7 @@ certwatcher --exit-warn -w 14 -f hosts.txt || send-alert
 | `--ca-file <path>` | Custom CA certificate bundle |
 | `--grace <days>` | Grace period for new certificates |
 | `--fail-ocsp` | Fail on OCSP revoked status |
-| `--starttls <proto>` | STARTTLS protocol (smtp/imap/ftp/pop3) |
+| `--starttls <proto>` | STARTTLS protocol (smtp/imap/ftp/pop3/xmpp/ldap) |
 | `--format-date <fmt>` | Custom strftime date format |
 | `--brief` | Compact status overview per host |
 | `--fingerprint` | SHA256 fingerprint only output |
@@ -127,6 +127,17 @@ certwatcher --exit-warn -w 14 -f hosts.txt || send-alert
 | `--ndjson` | Newline-delimited JSON output |
 | `--version-json` | Version info as JSON |
 | `--color=MODE` | Color: always/never/auto |
+| `--chain` | Show certificate chain hierarchy |
+| `--expiry-date` | Raw expiry date per host |
+| `--subject-only` | Certificate subject only |
+| `--cipher-only` | TLS version and cipher info |
+| `--serial-only` | Serial number only |
+| `--key-only` | Key type and size |
+| `--ocsp-only` | OCSP stapling status |
+| `--timing-only` | Connection timing breakdown |
+| `--sig-algo` | Signature algorithm |
+| `--self-signed-only` | Filter self-signed certs |
+| `--weak` | Filter weak crypto certs |
 | `-V` | Show version |
 
 ### Host file format
