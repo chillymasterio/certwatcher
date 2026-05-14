@@ -152,10 +152,65 @@ typedef struct {
     int cipher_bits;
 } cert_info_t;
 
+/* ── STARTTLS helpers ── */
+
+enum starttls_proto { STARTTLS_NONE = 0, STARTTLS_SMTP, STARTTLS_IMAP, STARTTLS_FTP };
+
+static int do_starttls(SOCKET sock, enum starttls_proto proto) {
+    char buf[1024];
+    int n;
+
+    switch (proto) {
+    case STARTTLS_SMTP:
+        /* Read greeting */
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        buf[n] = '\0';
+        /* Send EHLO */
+        send(sock, "EHLO certwatcher\r\n", 18, 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        buf[n] = '\0';
+        /* Send STARTTLS */
+        send(sock, "STARTTLS\r\n", 10, 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        buf[n] = '\0';
+        if (strncmp(buf, "220", 3) != 0) return -1;
+        break;
+
+    case STARTTLS_IMAP:
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        send(sock, "a001 STARTTLS\r\n", 15, 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        buf[n] = '\0';
+        if (strstr(buf, "OK") == NULL) return -1;
+        break;
+
+    case STARTTLS_FTP:
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        send(sock, "AUTH TLS\r\n", 10, 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        buf[n] = '\0';
+        if (strncmp(buf, "234", 3) != 0) return -1;
+        break;
+
+    case STARTTLS_NONE:
+    default:
+        break;
+    }
+    return 0;
+}
+
 /* ── Get certificate from host ── */
 
 static int fetch_cert(const char *host, const char *port, int timeout_sec,
-                      const char *sni_name, cert_info_t *info) {
+                      const char *sni_name, enum starttls_proto starttls,
+                      cert_info_t *info) {
     struct addrinfo hints, *res;
     SOCKET sock;
     SSL_CTX *ctx = NULL;
@@ -196,6 +251,14 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     }
     freeaddrinfo(res);
     info->connected = 1;
+
+    /* STARTTLS negotiation if needed */
+    if (starttls != STARTTLS_NONE) {
+        if (do_starttls(sock, starttls) != 0) {
+            closesocket(sock);
+            return -1;
+        }
+    }
 
     /* SSL handshake */
     ctx = SSL_CTX_new(TLS_client_method());
@@ -525,6 +588,7 @@ int main(int argc, char **argv) {
     int json = 0;
     int expired_only = 0;
     int exit_warn = 0;
+    enum starttls_proto starttls = STARTTLS_NONE;
     int i;
 
     /* Parse args */
@@ -559,6 +623,15 @@ int main(int argc, char **argv) {
             expired_only = 1;
         } else if (strcmp(argv[i], "--exit-warn") == 0) {
             exit_warn = 1;
+        } else if (strcmp(argv[i], "--starttls") == 0 && i + 1 < argc) {
+            i++;
+            if (strcmp(argv[i], "smtp") == 0) starttls = STARTTLS_SMTP;
+            else if (strcmp(argv[i], "imap") == 0) starttls = STARTTLS_IMAP;
+            else if (strcmp(argv[i], "ftp") == 0) starttls = STARTTLS_FTP;
+            else {
+                fprintf(stderr, "Unknown STARTTLS protocol: %s (use smtp, imap, ftp)\n", argv[i]);
+                return 1;
+            }
         } else if (argv[i][0] == '-') {
             fprintf(stderr, "Unknown option: %s\n", argv[i]);
             usage(argv[0]);
@@ -630,7 +703,7 @@ int main(int argc, char **argv) {
         }
 
         cert_info_t info;
-        int rc = fetch_cert(h, p, timeout_sec, sni, &info);
+        int rc = fetch_cert(h, p, timeout_sec, sni, starttls, &info);
 
         if (rc != 0) {
             if (!json && !csv) {
