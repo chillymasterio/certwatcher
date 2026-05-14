@@ -799,6 +799,7 @@ int main(int argc, char **argv) {
 
     int any_warn = 0;
     int any_error = 0;
+    int count_ok = 0, count_warn = 0, count_err = 0;
 
     if (csv)
         printf("host,port,cn,issuer,days_left,expires,key_type,key_bits,tls,chain_valid\n");
@@ -831,11 +832,16 @@ int main(int argc, char **argv) {
                     printf("\n%s%s:%s%s\n  %sConnection failed%s\n", C_BOLD, h, p, C_RESET, C_RED, C_RESET);
             }
             any_error = 1;
+            count_err++;
             continue;
         }
 
-        if (info.days_left <= warn_days)
+        if (info.days_left <= warn_days) {
             any_warn = 1;
+            count_warn++;
+        } else {
+            count_ok++;
+        }
 
         if (expired_only && info.days_left > warn_days)
             continue;
@@ -859,15 +865,11 @@ int main(int argc, char **argv) {
 
     /* Summary line */
     if (!quiet && !json && !csv && !oneline && nhost > 1) {
-        int ok = 0, warn = 0, err = 0;
-        /* Re-count from results - use any_warn and any_error as rough guide */
-        /* We'll track properly with counters */
-        printf("\n%s--- Summary: %d hosts checked", C_DIM, nhost);
-        if (any_warn) printf(", %ssome expiring%s", C_YELLOW, C_DIM);
-        if (any_error) printf(", %ssome errors%s", C_RED, C_DIM);
-        if (!any_warn && !any_error) printf(", %sall valid%s", C_GREEN, C_DIM);
+        printf("\n%s--- Summary: %d hosts checked: ", C_DIM, nhost);
+        if (count_ok > 0) printf("%s%d valid%s", C_GREEN, count_ok, C_DIM);
+        if (count_warn > 0) printf("%s%s%d expiring%s", count_ok ? ", " : "", C_YELLOW, count_warn, C_DIM);
+        if (count_err > 0) printf("%s%s%d errors%s", (count_ok || count_warn) ? ", " : "", C_RED, count_err, C_DIM);
         printf(" ---%s\n", C_RESET);
-        (void)ok; (void)warn; (void)err;
     }
 
     net_cleanup();
