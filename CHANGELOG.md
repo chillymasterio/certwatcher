@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.3.0 (2026-05-15)
+
+### New Features
+- `--version-json` for machine-readable version info
+- `--color=always/never/auto` for explicit color control
+- `--ndjson` newline-delimited JSON output
+- `--fingerprint` for SHA256 fingerprint-only output
+- `--issuer-only` for minimal issuer output per host
+- `--san-list` to display all Subject Alternative Names
+- `--brief` compact status overview (host + status + days)
+
+### Fixed
+- strncpy truncation warning replaced with snprintf
+
 ## v1.2.0 (2026-05-14)
 
 ### New Features
