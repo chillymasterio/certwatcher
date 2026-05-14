@@ -42,7 +42,7 @@
   #define INVALID_SOCKET (-1)
 #endif
 
-#define CW_VERSION "1.0.0"
+#define CW_VERSION "1.1.0"
 #define MAX_HOSTS 256
 #define DEFAULT_PORT "443"
 #define DEFAULT_WARN_DAYS 30

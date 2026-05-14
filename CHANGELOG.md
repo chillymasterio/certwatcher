@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.1.0 (2026-05-14)
+
+### New Features
+- `--parallel` flag for concurrent host checking with threads
+- `--verify` flag for strict certificate chain verification
+- `--min-tls` flag to enforce minimum TLS version
+- `--min-key` flag to warn on weak key sizes
+- `--no-sni` flag to disable Server Name Indication
+- `--ca-file` flag for custom CA certificate bundles
+- `--grace` flag to suppress warnings for recently-issued certs
+- `--count` flag for statistics-only output
+- `--format-date` flag for custom date formatting
+- `-4`/`-6` flags to force IPv4/IPv6
+- OCSP stapling status detection
+- Certificate lifetime and elapsed percentage display
+
 ## v1.0.0 (2026-05-14)
 
 Initial release.
