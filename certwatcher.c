@@ -175,6 +175,11 @@ typedef struct {
     char tls_version[32];
     char cipher[128];
     int cipher_bits;
+
+    /* Timing */
+    double connect_ms;
+    double tls_ms;
+    double total_ms;
 } cert_info_t;
 
 /* ── STARTTLS helpers ── */
@@ -246,6 +251,9 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     memset(info, 0, sizeof(*info));
     strncpy(info->host, host, sizeof(info->host) - 1);
     strncpy(info->port, port, sizeof(info->port) - 1);
+
+    struct timespec ts_start, ts_conn, ts_tls;
+    clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
     /* Resolve */
     memset(&hints, 0, sizeof(hints));
@@ -321,6 +329,9 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     }
     freeaddrinfo(res);
     info->connected = 1;
+    clock_gettime(CLOCK_MONOTONIC, &ts_conn);
+    info->connect_ms = (ts_conn.tv_sec - ts_start.tv_sec) * 1000.0
+                     + (ts_conn.tv_nsec - ts_start.tv_nsec) / 1e6;
 
     /* Set read/write timeouts */
     {
@@ -359,6 +370,11 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
         return -1;
     }
     info->ssl_ok = 1;
+    clock_gettime(CLOCK_MONOTONIC, &ts_tls);
+    info->tls_ms = (ts_tls.tv_sec - ts_conn.tv_sec) * 1000.0
+                 + (ts_tls.tv_nsec - ts_conn.tv_nsec) / 1e6;
+    info->total_ms = (ts_tls.tv_sec - ts_start.tv_sec) * 1000.0
+                   + (ts_tls.tv_nsec - ts_start.tv_nsec) / 1e6;
 
     /* TLS info */
     strncpy(info->tls_version, SSL_get_version(ssl), sizeof(info->tls_version) - 1);
@@ -539,6 +555,9 @@ static void print_cert_normal(const cert_info_t *info, int warn_days, int verbos
         printf("  Chain:       %s%d certificates, valid%s\n",
                C_GREEN, info->chain_depth, C_RESET);
     }
+
+    printf("  Timing:      %.0f ms connect, %.0f ms TLS, %.0f ms total\n",
+           info->connect_ms, info->tls_ms, info->total_ms);
 
     if (verbose) {
         if (info->ip_addr[0])
