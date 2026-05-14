@@ -96,12 +96,30 @@ certwatcher --exit-warn -w 14 -f hosts.txt || send-alert
 | `-f <file>` | Read hosts from file |
 | `-s <name>` | Override SNI hostname |
 | `-v` | Verbose (SANs, serial, fingerprint, chain) |
+| `-q`, `--quiet` | Suppress all output (use exit codes only) |
 | `-1` | One-line output per host |
+| `-4`, `-6` | Force IPv4 or IPv6 |
+| `-o <file>` | Write output to file |
 | `--csv` | CSV output |
 | `--json` | JSON output |
+| `--pem` | Dump certificates in PEM format |
 | `--no-color` | Disable colors |
 | `--expired-only` | Only show expiring certs |
 | `--exit-warn` | Exit 1 if any cert near expiry |
+| `--sort` | Sort by expiry date |
+| `--count` | Show statistics only |
+| `--parallel` | Check hosts concurrently |
+| `--progress` | Show progress for multi-host checks |
+| `--verify` | Strict certificate chain verification |
+| `--match-host` | Warn on hostname/SAN mismatch |
+| `--no-sni` | Disable SNI extension |
+| `--min-tls <ver>` | Minimum TLS version (1.0-1.3) |
+| `--min-key <bits>` | Minimum key size in bits |
+| `--ca-file <path>` | Custom CA certificate bundle |
+| `--grace <days>` | Grace period for new certificates |
+| `--fail-ocsp` | Fail on OCSP revoked status |
+| `--starttls <proto>` | STARTTLS protocol (smtp/imap/ftp/pop3) |
+| `--format-date <fmt>` | Custom strftime date format |
 | `-V` | Show version |
 
 ### Host file format
