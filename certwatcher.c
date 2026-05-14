@@ -903,6 +903,7 @@ int main(int argc, char **argv) {
     int fingerprint_only = 0;
     int issuer_only = 0;
     int san_list = 0;
+    int brief_mode = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -964,6 +965,8 @@ int main(int argc, char **argv) {
             issuer_only = 1;
         } else if (strcmp(argv[i], "--san-list") == 0) {
             san_list = 1;
+        } else if (strcmp(argv[i], "--brief") == 0) {
+            brief_mode = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1275,7 +1278,21 @@ int main(int argc, char **argv) {
 
     for (i = 0; i < nresults; i++) {
         if (!quiet) {
-            if (fingerprint_only) {
+            if (brief_mode) {
+                const char *status;
+                const char *color;
+                if (!results[i].ssl_ok) {
+                    status = "ERROR"; color = C_RED;
+                } else if (results[i].days_left < 0) {
+                    status = "EXPIRED"; color = C_RED;
+                } else if (results[i].days_left <= warn_days) {
+                    status = "WARN"; color = C_YELLOW;
+                } else {
+                    status = "OK"; color = C_GREEN;
+                }
+                printf("%-30s %s%-7s%s %4d days\n",
+                       results[i].host, color, status, C_RESET, results[i].days_left);
+            } else if (fingerprint_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
