@@ -914,6 +914,9 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--version") == 0) {
             printf("certwatcher %s\n", CW_VERSION);
             return 0;
+        } else if (strcmp(argv[i], "--version-json") == 0) {
+            printf("{\"name\":\"certwatcher\",\"version\":\"%s\"}\n", CW_VERSION);
+            return 0;
         } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
             port = argv[++i];
         } else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) {
@@ -1029,7 +1032,7 @@ int main(int argc, char **argv) {
             char *p = line;
             while (*p == ' ' || *p == '\t') p++;
             if (*p == '\0') continue;
-            strncpy(line_bufs[nhost], p, sizeof(line_bufs[nhost]) - 1);
+            snprintf(line_bufs[nhost], sizeof(line_bufs[nhost]), "%s", p);
             hosts[nhost] = line_bufs[nhost];
             nhost++;
         }
