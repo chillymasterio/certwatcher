@@ -52,6 +52,7 @@
 static int use_color = 1;
 static int g_af_family = AF_UNSPEC;
 static const char *g_ca_file = NULL;
+static const char *g_date_format = "%Y-%m-%d %H:%M:%S UTC";
 
 #define C_RED     (use_color ? "\033[31m" : "")
 #define C_GREEN   (use_color ? "\033[32m" : "")
@@ -111,7 +112,7 @@ static int days_until(time_t target) {
 
 static void format_time(time_t t, char *buf, size_t len) {
     struct tm *tm = gmtime(&t);
-    strftime(buf, len, "%Y-%m-%d %H:%M:%S UTC", tm);
+    strftime(buf, len, g_date_format, tm);
 }
 
 static void format_relative(int days, char *buf, size_t len) {
@@ -912,6 +913,8 @@ int main(int argc, char **argv) {
             ca_file = argv[++i];
         } else if (strcmp(argv[i], "--grace") == 0 && i + 1 < argc) {
             grace_days = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--format-date") == 0 && i + 1 < argc) {
+            g_date_format = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
