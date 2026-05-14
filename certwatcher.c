@@ -210,7 +210,7 @@ typedef struct {
 
 /* ── STARTTLS helpers ── */
 
-enum starttls_proto { STARTTLS_NONE = 0, STARTTLS_SMTP, STARTTLS_IMAP, STARTTLS_FTP, STARTTLS_POP3 };
+enum starttls_proto { STARTTLS_NONE = 0, STARTTLS_SMTP, STARTTLS_IMAP, STARTTLS_FTP, STARTTLS_POP3, STARTTLS_XMPP };
 
 static int do_starttls(SOCKET sock, enum starttls_proto proto) {
     char buf[1024];
@@ -265,6 +265,21 @@ static int do_starttls(SOCKET sock, enum starttls_proto proto) {
         if (strncmp(buf, "+OK", 3) != 0) return -1;
         break;
 
+    case STARTTLS_XMPP:
+        /* Send stream header */
+        send(sock, "<stream:stream xmlns='jabber:client' "
+             "xmlns:stream='http://etherx.jabber.org/streams' "
+             "to='localhost' version='1.0'>", 128, 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        /* Send STARTTLS */
+        send(sock, "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>", 51, 0);
+        n = recv(sock, buf, sizeof(buf) - 1, 0);
+        if (n <= 0) return -1;
+        buf[n] = '\0';
+        if (strstr(buf, "proceed") == NULL) return -1;
+        break;
+
     case STARTTLS_NONE:
     default:
         break;
@@ -280,6 +295,7 @@ static const char *auto_port_for_starttls(enum starttls_proto proto) {
     case STARTTLS_IMAP: return "143";
     case STARTTLS_FTP:  return "21";
     case STARTTLS_POP3: return "110";
+    case STARTTLS_XMPP: return "5222";
     default: return NULL;
     }
 }
@@ -1062,8 +1078,9 @@ int main(int argc, char **argv) {
             else if (strcmp(argv[i], "imap") == 0) starttls = STARTTLS_IMAP;
             else if (strcmp(argv[i], "ftp") == 0) starttls = STARTTLS_FTP;
             else if (strcmp(argv[i], "pop3") == 0) starttls = STARTTLS_POP3;
+            else if (strcmp(argv[i], "xmpp") == 0) starttls = STARTTLS_XMPP;
             else {
-                fprintf(stderr, "Unknown STARTTLS protocol: %s (use smtp, imap, ftp, pop3)\n", argv[i]);
+                fprintf(stderr, "Unknown STARTTLS protocol: %s (use smtp, imap, ftp, pop3, xmpp)\n", argv[i]);
                 return 1;
             }
         } else if (argv[i][0] == '-') {
