@@ -160,6 +160,7 @@ typedef struct {
     time_t not_before;
     time_t not_after;
     int days_left;
+    int days_since_issue;
 
     /* Details */
     char sig_algo[64];
@@ -499,6 +500,7 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     info->not_before = asn1_to_time(X509_get0_notBefore(cert));
     info->not_after = asn1_to_time(X509_get0_notAfter(cert));
     info->days_left = days_until(info->not_after);
+    info->days_since_issue = -days_until(info->not_before);
 
     /* SANs */
     GENERAL_NAMES *sans = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
@@ -845,6 +847,7 @@ int main(int argc, char **argv) {
     int min_tls = 0;  /* 0=any, 10=1.0, 11=1.1, 12=1.2, 13=1.3 */
     int min_key_bits = 0;
     const char *ca_file = NULL;
+    int grace_days = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -902,6 +905,8 @@ int main(int argc, char **argv) {
             min_key_bits = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--ca-file") == 0 && i + 1 < argc) {
             ca_file = argv[++i];
+        } else if (strcmp(argv[i], "--grace") == 0 && i + 1 < argc) {
+            grace_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1042,7 +1047,8 @@ int main(int argc, char **argv) {
             }
 
             cert_info_t *info = &par_results[i];
-            if (info->days_left <= warn_days || (match_host && !info->hostname_match)
+            int is_grace = (grace_days > 0 && info->days_since_issue <= grace_days);
+            if ((!is_grace && info->days_left <= warn_days) || (match_host && !info->hostname_match)
                 || (min_tls && info->tls_version_num < min_tls)
                 || (min_key_bits && info->key_bits < min_key_bits)) {
                 any_warn = 1;
@@ -1076,7 +1082,8 @@ int main(int argc, char **argv) {
                 continue;
             }
 
-            if (info.days_left <= warn_days || (match_host && !info.hostname_match)
+            int is_grace = (grace_days > 0 && info.days_since_issue <= grace_days);
+            if ((!is_grace && info.days_left <= warn_days) || (match_host && !info.hostname_match)
                 || (min_tls && info.tls_version_num < min_tls)
                 || (min_key_bits && info.key_bits < min_key_bits)) {
                 any_warn = 1;
