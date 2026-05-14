@@ -187,6 +187,9 @@ typedef struct {
 
     /* Host match */
     int hostname_match;
+
+    /* Self-signed */
+    int self_signed;
 } cert_info_t;
 
 /* ── STARTTLS helpers ── */
@@ -412,6 +415,10 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     X509_NAME_oneline(X509_get_subject_name(cert), info->subject, sizeof(info->subject));
     X509_NAME_oneline(X509_get_issuer_name(cert), info->issuer, sizeof(info->issuer));
 
+    /* Self-signed check */
+    if (X509_NAME_cmp(X509_get_subject_name(cert), X509_get_issuer_name(cert)) == 0)
+        info->self_signed = 1;
+
     /* Common Name */
     X509_NAME *subj = X509_get_subject_name(cert);
     int cn_idx = X509_NAME_get_index_by_NID(subj, NID_commonName, -1);
@@ -590,6 +597,9 @@ static void print_cert_normal(const cert_info_t *info, int warn_days, int verbos
     printf("  Signature:   %s\n", info->sig_algo);
     printf("  TLS:         %s (%s, %d bits)\n",
            info->tls_version, info->cipher, info->cipher_bits);
+
+    if (info->self_signed)
+        printf("  Notice:      %sSelf-signed certificate%s\n", C_YELLOW, C_RESET);
 
     if (!info->chain_valid) {
         printf("  Chain:       %s%s%s\n", C_RED, info->verify_error, C_RESET);
