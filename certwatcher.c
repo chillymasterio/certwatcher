@@ -237,20 +237,65 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
         return -1;
     }
 
-    /* Set timeout */
-    struct timeval tv;
-    tv.tv_sec = timeout_sec;
-    tv.tv_usec = 0;
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
-    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
-
-    if (connect(sock, res->ai_addr, (int)res->ai_addrlen) != 0) {
-        closesocket(sock);
-        freeaddrinfo(res);
-        return -1;
+    /* Non-blocking connect with timeout */
+    {
+#ifdef _WIN32
+        unsigned long nb = 1;
+        ioctlsocket(sock, FIONBIO, &nb);
+#else
+        int flags = fcntl(sock, F_GETFL, 0);
+        fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+#endif
+        int rc = connect(sock, res->ai_addr, (int)res->ai_addrlen);
+        if (rc != 0) {
+#ifdef _WIN32
+            if (WSAGetLastError() != WSAEWOULDBLOCK) {
+#else
+            if (errno != EINPROGRESS) {
+#endif
+                closesocket(sock);
+                freeaddrinfo(res);
+                return -1;
+            }
+            fd_set wfds;
+            struct timeval tv;
+            tv.tv_sec = timeout_sec;
+            tv.tv_usec = 0;
+            FD_ZERO(&wfds);
+            FD_SET(sock, &wfds);
+            if (select((int)sock + 1, NULL, &wfds, NULL, &tv) <= 0) {
+                closesocket(sock);
+                freeaddrinfo(res);
+                return -1;
+            }
+            int serr = 0;
+            socklen_t slen = sizeof(serr);
+            getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&serr, &slen);
+            if (serr != 0) {
+                closesocket(sock);
+                freeaddrinfo(res);
+                return -1;
+            }
+        }
+        /* Back to blocking */
+#ifdef _WIN32
+        nb = 0;
+        ioctlsocket(sock, FIONBIO, &nb);
+#else
+        fcntl(sock, F_SETFL, flags);
+#endif
     }
     freeaddrinfo(res);
     info->connected = 1;
+
+    /* Set read/write timeouts */
+    {
+        struct timeval tv;
+        tv.tv_sec = timeout_sec;
+        tv.tv_usec = 0;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
+        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
+    }
 
     /* STARTTLS negotiation if needed */
     if (starttls != STARTTLS_NONE) {
