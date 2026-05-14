@@ -894,6 +894,7 @@ int main(int argc, char **argv) {
     int fail_ocsp = 0;
     int days_only = 0;
     int show_header = 0;
+    int retries = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -963,6 +964,8 @@ int main(int argc, char **argv) {
             days_only = 1;
         } else if (strcmp(argv[i], "--header") == 0) {
             show_header = 1;
+        } else if (strcmp(argv[i], "--retries") == 0 && i + 1 < argc) {
+            retries = atoi(argv[++i]);
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1134,8 +1137,13 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "\r%sChecking %d/%d: %s%s", C_DIM, i + 1, nhost, parsed_hosts[i], C_RESET);
 
             cert_info_t info;
-            int rc = fetch_cert(parsed_hosts[i], parsed_ports[i],
+            int rc = -1;
+            int attempt;
+            for (attempt = 0; attempt <= retries; attempt++) {
+                rc = fetch_cert(parsed_hosts[i], parsed_ports[i],
                                 timeout_sec, sni, starttls, verify_strict, &info);
+                if (rc == 0) break;
+            }
 
             if (rc != 0) {
                 if (!quiet && !json && !csv) {
