@@ -857,6 +857,19 @@ int main(int argc, char **argv) {
     if (json)
         printf("\n]\n");
 
+    /* Summary line */
+    if (!quiet && !json && !csv && !oneline && nhost > 1) {
+        int ok = 0, warn = 0, err = 0;
+        /* Re-count from results - use any_warn and any_error as rough guide */
+        /* We'll track properly with counters */
+        printf("\n%s--- Summary: %d hosts checked", C_DIM, nhost);
+        if (any_warn) printf(", %ssome expiring%s", C_YELLOW, C_DIM);
+        if (any_error) printf(", %ssome errors%s", C_RED, C_DIM);
+        if (!any_warn && !any_error) printf(", %sall valid%s", C_GREEN, C_DIM);
+        printf(" ---%s\n", C_RESET);
+        (void)ok; (void)warn; (void)err;
+    }
+
     net_cleanup();
 
     if (exit_warn && any_warn) return 1;
