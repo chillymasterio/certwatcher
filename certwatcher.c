@@ -880,6 +880,7 @@ int main(int argc, char **argv) {
     int grace_days = 0;
     int progress = 0;
     int fail_ocsp = 0;
+    int days_only = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -945,6 +946,8 @@ int main(int argc, char **argv) {
             progress = 1;
         } else if (strcmp(argv[i], "--fail-ocsp") == 0) {
             fail_ocsp = 1;
+        } else if (strcmp(argv[i], "--days-only") == 0) {
+            days_only = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1183,7 +1186,9 @@ int main(int argc, char **argv) {
 
     for (i = 0; i < nresults; i++) {
         if (!quiet) {
-            if (pem_output) {
+            if (days_only) {
+                printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (pem_output) {
                 printf("# %s:%s\n%s", results[i].host, results[i].port, results[i].pem);
             } else if (json) {
                 if (i > 0) printf(",\n");
