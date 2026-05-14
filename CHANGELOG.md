@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.2.0 (2026-05-14)
+
+### New Features
+- `--retries` flag for automatic retry on connection failure
+- `--delay` flag for rate limiting between host checks
+- `--timestamp` flag to show check time in output
+- `--ciphers` flag to restrict TLS cipher suites
+- `--days-only` flag for minimal days-remaining output
+- `--header` flag for column headers in one-line mode
+- `--fail-ocsp` flag to fail on OCSP revoked status
+- POP3 STARTTLS protocol support
+- Auto-detect port from STARTTLS protocol
+- Specific error messages (DNS, timeout, TLS handshake)
+
 ## v1.1.0 (2026-05-14)
 
 ### New Features
