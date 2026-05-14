@@ -910,6 +910,7 @@ int main(int argc, char **argv) {
     int cipher_only = 0;
     int serial_only = 0;
     int key_only = 0;
+    int ocsp_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -985,6 +986,8 @@ int main(int argc, char **argv) {
             serial_only = 1;
         } else if (strcmp(argv[i], "--key-only") == 0) {
             key_only = 1;
+        } else if (strcmp(argv[i], "--ocsp-only") == 0) {
+            ocsp_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1323,6 +1326,14 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
+            } else if (ocsp_only) {
+                const char *status = "not stapled";
+                if (results[i].ocsp_stapled) {
+                    if (results[i].ocsp_status == V_OCSP_CERTSTATUS_GOOD) status = "good";
+                    else if (results[i].ocsp_status == V_OCSP_CERTSTATUS_REVOKED) status = "REVOKED";
+                    else status = "unknown";
+                }
+                printf("%s:%s %s\n", results[i].host, results[i].port, status);
             } else if (key_only) {
                 printf("%s:%s %s %d bits\n", results[i].host, results[i].port,
                        results[i].key_type, results[i].key_bits);
