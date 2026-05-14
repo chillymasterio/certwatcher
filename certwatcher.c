@@ -895,6 +895,7 @@ int main(int argc, char **argv) {
     int days_only = 0;
     int show_header = 0;
     int retries = 0;
+    int delay_ms = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -966,6 +967,8 @@ int main(int argc, char **argv) {
             show_header = 1;
         } else if (strcmp(argv[i], "--retries") == 0 && i + 1 < argc) {
             retries = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--delay") == 0 && i + 1 < argc) {
+            delay_ms = atoi(argv[++i]);
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1174,6 +1177,13 @@ int main(int argc, char **argv) {
                 continue;
 
             results[nresults++] = info;
+
+            if (delay_ms > 0 && i < nhost - 1) {
+                struct timespec ts_delay;
+                ts_delay.tv_sec = delay_ms / 1000;
+                ts_delay.tv_nsec = (delay_ms % 1000) * 1000000L;
+                nanosleep(&ts_delay, NULL);
+            }
         }
     }
 
