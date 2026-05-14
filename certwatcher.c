@@ -865,6 +865,7 @@ int main(int argc, char **argv) {
     const char *ca_file = NULL;
     int grace_days = 0;
     int progress = 0;
+    int fail_ocsp = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -928,6 +929,8 @@ int main(int argc, char **argv) {
             g_date_format = argv[++i];
         } else if (strcmp(argv[i], "--progress") == 0) {
             progress = 1;
+        } else if (strcmp(argv[i], "--fail-ocsp") == 0) {
+            fail_ocsp = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1072,7 +1075,8 @@ int main(int argc, char **argv) {
             int is_grace = (grace_days > 0 && info->days_since_issue <= grace_days);
             if ((!is_grace && info->days_left <= warn_days) || (match_host && !info->hostname_match)
                 || (min_tls && info->tls_version_num < min_tls)
-                || (min_key_bits && info->key_bits < min_key_bits)) {
+                || (min_key_bits && info->key_bits < min_key_bits)
+                || (fail_ocsp && info->ocsp_stapled && info->ocsp_status == V_OCSP_CERTSTATUS_REVOKED)) {
                 any_warn = 1;
                 count_warn++;
             } else {
@@ -1110,7 +1114,8 @@ int main(int argc, char **argv) {
             int is_grace = (grace_days > 0 && info.days_since_issue <= grace_days);
             if ((!is_grace && info.days_left <= warn_days) || (match_host && !info.hostname_match)
                 || (min_tls && info.tls_version_num < min_tls)
-                || (min_key_bits && info.key_bits < min_key_bits)) {
+                || (min_key_bits && info.key_bits < min_key_bits)
+                || (fail_ocsp && info.ocsp_stapled && info.ocsp_status == V_OCSP_CERTSTATUS_REVOKED)) {
                 any_warn = 1;
                 count_warn++;
             } else {
