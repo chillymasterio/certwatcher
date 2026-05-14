@@ -1,0 +1,128 @@
+.TH CERTWATCHER 1 "2026-05-14" "certwatcher 1.0.0" "User Commands"
+.SH NAME
+certwatcher \- SSL/TLS certificate monitoring tool
+.SH SYNOPSIS
+.B certwatcher
+[\fIoptions\fR] \fIhost\fR [\fIhost2\fR ...]
+.br
+.B certwatcher
+[\fIoptions\fR] \fB\-f\fR \fIhostfile\fR
+.SH DESCRIPTION
+.B certwatcher
+checks SSL/TLS certificates on remote hosts and reports their status,
+expiry dates, chain validity, and cryptographic details.
+.PP
+Designed for sysadmins, DevOps engineers, and security teams who need
+to monitor certificate expiry across many hosts.
+.SH OPTIONS
+.TP
+.BI \-p " port"
+Port to connect to (default: 443).
+.TP
+.BI \-t " seconds"
+Connection timeout in seconds (default: 10).
+.TP
+.BI \-w " days"
+Warning threshold in days (default: 30). Certificates expiring within
+this many days are flagged.
+.TP
+.BI \-f " file"
+Read hostnames from file, one per line. Lines starting with # are comments.
+.TP
+.BI \-s " name"
+Override the SNI (Server Name Indication) hostname sent during TLS handshake.
+.TP
+.B \-v
+Verbose output. Show IP address, SANs, serial number, fingerprint, and
+full certificate chain.
+.TP
+.B \-1
+One-line output per host. Compact format for dashboards.
+.TP
+.B \-q, \-\-quiet
+Suppress all output. Only exit codes are used.
+.TP
+.B \-\-csv
+Output in CSV format.
+.TP
+.B \-\-json
+Output in JSON format.
+.TP
+.B \-\-pem
+Output certificates in PEM format.
+.TP
+.BI \-o " file"
+Write output to file instead of stdout.
+.TP
+.B \-\-no\-color
+Disable colored output.
+.TP
+.B \-\-expired\-only
+Only show certificates that are expired or expiring within the warning threshold.
+.TP
+.B \-\-exit\-warn
+Exit with code 1 if any certificate is expiring within the warning threshold.
+.TP
+.B \-\-sort
+Sort results by days until expiry (ascending).
+.TP
+.B \-\-match\-host
+Flag hostname mismatches as warnings.
+.TP
+.BI \-\-starttls " protocol"
+Perform STARTTLS negotiation before TLS handshake. Supported protocols:
+smtp, imap, ftp.
+.TP
+.B \-V, \-\-version
+Show version and exit.
+.TP
+.B \-h, \-\-help
+Show usage information and exit.
+.SH EXIT CODES
+.TP
+.B 0
+All certificates valid.
+.TP
+.B 1
+At least one certificate expiring within threshold (with \-\-exit\-warn).
+.TP
+.B 2
+Connection error occurred.
+.SH EXAMPLES
+.PP
+Check certificates for multiple hosts:
+.PP
+.RS
+certwatcher google.com github.com cloudflare.com
+.RE
+.PP
+Check with 14-day warning threshold, one-line output:
+.PP
+.RS
+certwatcher \-w 14 \-1 \-f hosts.txt
+.RE
+.PP
+JSON output for automation:
+.PP
+.RS
+certwatcher \-\-json example.com | jq .
+.RE
+.PP
+Check SMTP server certificate:
+.PP
+.RS
+certwatcher \-\-starttls smtp \-p 25 mail.example.com
+.RE
+.PP
+Silent check for monitoring scripts:
+.PP
+.RS
+certwatcher \-q \-\-exit\-warn \-w 14 \-f hosts.txt || send\-alert
+.RE
+.SH AUTHOR
+Written by chillymasterio.
+.SH LICENSE
+MIT License.
+.SH SEE ALSO
+.BR openssl (1),
+.BR openssl\-s_client (1)

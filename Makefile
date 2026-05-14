@@ -5,6 +5,7 @@ LDLIBS ?= -lssl -lcrypto
 
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
+MANDIR ?= $(PREFIX)/share/man/man1
 
 TARGET = certwatcher
 SRC = certwatcher.c
@@ -27,6 +28,9 @@ clean:
 install: $(TARGET)
 	install -d $(DESTDIR)$(BINDIR)
 	install -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
+	install -d $(DESTDIR)$(MANDIR)
+	install -m 644 certwatcher.1 $(DESTDIR)$(MANDIR)/certwatcher.1
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
+	rm -f $(DESTDIR)$(MANDIR)/certwatcher.1
