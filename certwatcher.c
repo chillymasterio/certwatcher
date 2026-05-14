@@ -52,6 +52,7 @@
 static int use_color = 1;
 static int g_af_family = AF_UNSPEC;
 static const char *g_ca_file = NULL;
+static const char *g_ciphers = NULL;
 static const char *g_date_format = "%Y-%m-%d %H:%M:%S UTC";
 
 #define C_RED     (use_color ? "\033[31m" : "")
@@ -408,6 +409,9 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
         SSL_CTX_load_verify_locations(ctx, g_ca_file, NULL);
     else
         SSL_CTX_set_default_verify_paths(ctx);
+
+    if (g_ciphers)
+        SSL_CTX_set_cipher_list(ctx, g_ciphers);
     if (verify_strict)
         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
     else
@@ -897,6 +901,7 @@ int main(int argc, char **argv) {
     int retries = 0;
     int delay_ms = 0;
     int show_timestamp = 0;
+    const char *ciphers = NULL;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -972,6 +977,8 @@ int main(int argc, char **argv) {
             delay_ms = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--timestamp") == 0) {
             show_timestamp = 1;
+        } else if (strcmp(argv[i], "--ciphers") == 0 && i + 1 < argc) {
+            ciphers = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1052,6 +1059,7 @@ int main(int argc, char **argv) {
 
     /* Init */
     if (ca_file) g_ca_file = ca_file;
+    if (ciphers) g_ciphers = ciphers;
 
     detect_color();
     net_init();
