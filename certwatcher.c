@@ -896,6 +896,7 @@ int main(int argc, char **argv) {
     int show_header = 0;
     int retries = 0;
     int delay_ms = 0;
+    int show_timestamp = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -969,6 +970,8 @@ int main(int argc, char **argv) {
             retries = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--delay") == 0 && i + 1 < argc) {
             delay_ms = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--timestamp") == 0) {
+            show_timestamp = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1217,6 +1220,13 @@ int main(int argc, char **argv) {
         if (exit_warn && any_warn) return 1;
         if (any_error) return 2;
         return 0;
+    }
+
+    if (show_timestamp && !quiet && !json && !csv) {
+        time_t now = time(NULL);
+        char ts_buf[64];
+        strftime(ts_buf, sizeof(ts_buf), "%Y-%m-%d %H:%M:%S %Z", localtime(&now));
+        printf("%s[%s]%s\n", C_DIM, ts_buf, C_RESET);
     }
 
     if (show_header && oneline && !quiet)
