@@ -771,6 +771,7 @@ int main(int argc, char **argv) {
     int pem_output = 0;
     int match_host = 0;
     int parallel = 0;
+    int count_only = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -807,6 +808,8 @@ int main(int argc, char **argv) {
             match_host = 1;
         } else if (strcmp(argv[i], "--parallel") == 0) {
             parallel = 1;
+        } else if (strcmp(argv[i], "--count") == 0) {
+            count_only = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1009,6 +1012,15 @@ int main(int argc, char **argv) {
         printf("host,port,cn,issuer,days_left,expires,key_type,key_bits,tls,chain_valid\n");
     if (json)
         printf("[\n");
+
+    if (count_only) {
+        printf("total=%d valid=%d expiring=%d errors=%d\n",
+               nhost, count_ok, count_warn, count_err);
+        net_cleanup();
+        if (exit_warn && any_warn) return 1;
+        if (any_error) return 2;
+        return 0;
+    }
 
     for (i = 0; i < nresults; i++) {
         if (!quiet) {
