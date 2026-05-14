@@ -1,0 +1,5 @@
+build/
+certwatcher
+certwatcher.exe
+*.o
+*.obj

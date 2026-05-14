@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+      - name: Build with Make
+        run: make
+      - name: Show version
+        run: ./certwatcher -V
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: brew install openssl
+      - name: Build
+        run: |
+          export CFLAGS="-I$(brew --prefix openssl)/include"
+          export LDFLAGS="-L$(brew --prefix openssl)/lib"
+          make
+      - name: Show version
+        run: ./certwatcher -V
