@@ -854,6 +854,7 @@ int main(int argc, char **argv) {
     int min_key_bits = 0;
     const char *ca_file = NULL;
     int grace_days = 0;
+    int progress = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -915,6 +916,8 @@ int main(int argc, char **argv) {
             grace_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--format-date") == 0 && i + 1 < argc) {
             g_date_format = argv[++i];
+        } else if (strcmp(argv[i], "--progress") == 0) {
+            progress = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -1073,6 +1076,9 @@ int main(int argc, char **argv) {
     } else {
         /* Sequential mode */
         for (i = 0; i < nhost; i++) {
+            if (progress && nhost > 1)
+                fprintf(stderr, "\r%sChecking %d/%d: %s%s", C_DIM, i + 1, nhost, parsed_hosts[i], C_RESET);
+
             cert_info_t info;
             int rc = fetch_cert(parsed_hosts[i], parsed_ports[i],
                                 timeout_sec, sni, starttls, verify_strict, &info);
@@ -1106,6 +1112,9 @@ int main(int argc, char **argv) {
             results[nresults++] = info;
         }
     }
+
+    if (progress && nhost > 1)
+        fprintf(stderr, "\r%*s\r", 60, "");  /* Clear progress line */
 
     /* Sort by days remaining if requested */
     if (sort_by_expiry && nresults > 1) {
