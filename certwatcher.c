@@ -6,6 +6,7 @@
  */
 
 #define _POSIX_C_SOURCE 200112L
+#include <strings.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -183,6 +184,9 @@ typedef struct {
     double connect_ms;
     double tls_ms;
     double total_ms;
+
+    /* Host match */
+    int hostname_match;
 } cert_info_t;
 
 /* ── STARTTLS helpers ── */
@@ -453,6 +457,25 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
                 strncat(info->sans, dns, sizeof(info->sans) - strlen(info->sans) - 1);
             }
         }
+        /* Check hostname match against SANs */
+        for (i = 0; i < n; i++) {
+            GENERAL_NAME *gen = sk_GENERAL_NAME_value(sans, i);
+            if (gen->type == GEN_DNS) {
+                const char *dns = (const char *)ASN1_STRING_get0_data(gen->d.dNSName);
+                if (strcasecmp(dns, host) == 0) {
+                    info->hostname_match = 1;
+                    break;
+                }
+                /* Wildcard matching */
+                if (dns[0] == '*' && dns[1] == '.') {
+                    const char *dot = strchr(host, '.');
+                    if (dot && strcasecmp(dot + 1, dns + 2) == 0) {
+                        info->hostname_match = 1;
+                        break;
+                    }
+                }
+            }
+        }
         GENERAL_NAMES_free(sans);
     }
 
@@ -581,6 +604,10 @@ static void print_cert_normal(const cert_info_t *info, int warn_days, int verbos
     if (verbose) {
         if (info->ip_addr[0])
             printf("  IP:          %s\n", info->ip_addr);
+        printf("  Host match:  %s%s%s\n",
+               info->hostname_match ? C_GREEN : C_RED,
+               info->hostname_match ? "yes" : "NO MATCH",
+               C_RESET);
         printf("  Version:     X.509v%d\n", info->version);
         printf("  Serial:      %s\n", info->serial);
         printf("  SHA-256:     %s\n", info->fingerprint_sha256);
@@ -712,6 +739,7 @@ int main(int argc, char **argv) {
     int quiet = 0;
     int sort_by_expiry = 0;
     int pem_output = 0;
+    int match_host = 0;
     const char *output_file = NULL;
     enum starttls_proto starttls = STARTTLS_NONE;
     int i;
@@ -744,6 +772,8 @@ int main(int argc, char **argv) {
             sort_by_expiry = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
+        } else if (strcmp(argv[i], "--match-host") == 0) {
+            match_host = 1;
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
         } else if (strcmp(argv[i], "--csv") == 0) {
@@ -860,7 +890,7 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        if (info.days_left <= warn_days) {
+        if (info.days_left <= warn_days || (match_host && !info.hostname_match)) {
             any_warn = 1;
             count_warn++;
         } else {
