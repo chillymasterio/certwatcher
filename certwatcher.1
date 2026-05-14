@@ -1,4 +1,4 @@
-.TH CERTWATCHER 1 "2026-05-15" "certwatcher 1.3.0" "User Commands"
+.TH CERTWATCHER 1 "2026-05-15" "certwatcher 1.4.0" "User Commands"
 .SH NAME
 certwatcher \- SSL/TLS certificate monitoring tool
 .SH SYNOPSIS
@@ -93,6 +93,45 @@ Print version as JSON.
 .TP
 .B \-\-color=\fImode\fR
 Color mode: always, never, or auto (default).
+.TP
+.B \-\-chain
+Display certificate chain hierarchy.
+.TP
+.B \-\-expiry\-date
+Print raw expiry date per host.
+.TP
+.B \-\-subject\-only
+Print certificate subject per host.
+.TP
+.B \-\-cipher\-only
+Print TLS version and cipher details per host.
+.TP
+.B \-\-serial\-only
+Print certificate serial number per host.
+.TP
+.B \-\-key\-only
+Print public key type and size per host.
+.TP
+.B \-\-ocsp\-only
+Print OCSP stapling status per host.
+.TP
+.B \-\-timing\-only
+Print connection timing breakdown (TCP, TLS, total) per host.
+.TP
+.B \-\-sig\-algo
+Print signature algorithm per host.
+.TP
+.B \-\-self\-signed\-only
+Only show self-signed certificates.
+.TP
+.B \-\-weak
+Only show certificates with weak crypto (TLS < 1.2, small key sizes).
+.TP
+.B \-\-starttls xmpp
+XMPP STARTTLS protocol support (port 5222).
+.TP
+.B \-\-starttls ldap
+LDAP STARTTLS protocol support (port 389).
 .TP
 .B \-V, \-\-version
 Show version and exit.
