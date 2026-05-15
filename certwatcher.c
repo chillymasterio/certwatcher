@@ -970,6 +970,7 @@ int main(int argc, char **argv) {
     int self_signed_filter = 0;
     int weak_filter = 0;
     int sig_algo_only = 0;
+    int lifetime_bar = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1055,6 +1056,8 @@ int main(int argc, char **argv) {
             weak_filter = 1;
         } else if (strcmp(argv[i], "--sig-algo") == 0) {
             sig_algo_only = 1;
+        } else if (strcmp(argv[i], "--lifetime") == 0) {
+            lifetime_bar = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1403,6 +1406,18 @@ int main(int argc, char **argv) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].fingerprint_sha256);
             } else if (issuer_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].issuer);
+            } else if (lifetime_bar) {
+                int total_days = results[i].days_since_issue + results[i].days_left;
+                int pct = total_days > 0 ? (int)(100.0 * results[i].days_since_issue / total_days) : 0;
+                if (pct > 100) pct = 100;
+                const char *bar_color = pct < 75 ? C_GREEN : pct < 90 ? C_YELLOW : C_RED;
+                int filled = pct / 5;
+                int empty = 20 - filled;
+                printf("%-30s [%s", results[i].host, bar_color);
+                for (int b = 0; b < filled; b++) printf("#");
+                printf("%s", C_RESET);
+                for (int b = 0; b < empty; b++) printf("-");
+                printf("] %3d%% (%d days left)\n", pct, results[i].days_left);
             } else if (sig_algo_only) {
                 printf("%s:%s %s\n", results[i].host, results[i].port, results[i].sig_algo);
             } else if (timing_only) {
