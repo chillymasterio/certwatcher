@@ -991,6 +991,7 @@ int main(int argc, char **argv) {
     int prometheus = 0;
     int nagios = 0;
     int shell_output = 0;
+    int markdown = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1088,6 +1089,8 @@ int main(int argc, char **argv) {
             nagios = 1;
         } else if (strcmp(argv[i], "--shell") == 0) {
             shell_output = 1;
+        } else if (strcmp(argv[i], "--markdown") == 0 || strcmp(argv[i], "--md") == 0) {
+            markdown = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1488,6 +1491,20 @@ watch_loop:
                 printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (markdown) {
+                if (i == 0) {
+                    printf("| Host | Status | Days | CN | Issuer | TLS | Key |\n");
+                    printf("|------|--------|------|----|--------|-----|-----|\n");
+                }
+                const char *st;
+                if (!results[i].ssl_ok) st = "ERROR";
+                else if (results[i].days_left < 0) st = "EXPIRED";
+                else if (results[i].days_left <= warn_days) st = "WARN";
+                else st = "OK";
+                printf("| %s:%s | %s | %d | %s | %s | %s | %s %d |\n",
+                       results[i].host, results[i].port, st, results[i].days_left,
+                       results[i].common_name, results[i].issuer,
+                       results[i].tls_version, results[i].key_type, results[i].key_bits);
             } else if (shell_output) {
                 char buf[64];
                 format_time(results[i].not_after, buf, sizeof(buf));
