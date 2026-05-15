@@ -971,6 +971,7 @@ int main(int argc, char **argv) {
     int weak_filter = 0;
     int sig_algo_only = 0;
     int lifetime_bar = 0;
+    int watch_interval = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1058,6 +1059,8 @@ int main(int argc, char **argv) {
             sig_algo_only = 1;
         } else if (strcmp(argv[i], "--lifetime") == 0) {
             lifetime_bar = 1;
+        } else if (strcmp(argv[i], "--watch") == 0 && i + 1 < argc) {
+            watch_interval = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1195,9 +1198,17 @@ int main(int argc, char **argv) {
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
 
+    int watch_run = 0;
+watch_loop:
+    ;
     int any_warn = 0;
     int any_error = 0;
     int count_ok = 0, count_warn = 0, count_err = 0;
+
+    if (watch_interval && watch_run > 0) {
+        printf("\033[2J\033[H");  /* clear screen */
+        fflush(stdout);
+    }
 
     /* Collect all results */
     static cert_info_t results[MAX_HOSTS];
@@ -1477,6 +1488,13 @@ int main(int argc, char **argv) {
         if (count_warn > 0) printf("%s%s%d expiring%s", count_ok ? ", " : "", C_YELLOW, count_warn, C_DIM);
         if (count_err > 0) printf("%s%s%d errors%s", (count_ok || count_warn) ? ", " : "", C_RED, count_err, C_DIM);
         printf(" ---%s\n", C_RESET);
+    }
+
+    if (watch_interval > 0) {
+        watch_run++;
+        struct timespec wts = { .tv_sec = watch_interval, .tv_nsec = 0 };
+        nanosleep(&wts, NULL);
+        goto watch_loop;
     }
 
     net_cleanup();
