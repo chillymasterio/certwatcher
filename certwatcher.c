@@ -993,6 +993,7 @@ int main(int argc, char **argv) {
     int shell_output = 0;
     int markdown = 0;
     int check_host_only = 0;
+    int tls_version_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1094,6 +1095,8 @@ int main(int argc, char **argv) {
             markdown = 1;
         } else if (strcmp(argv[i], "--check-host") == 0) {
             check_host_only = 1;
+        } else if (strcmp(argv[i], "--tls-only") == 0) {
+            tls_version_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1494,6 +1497,8 @@ watch_loop:
                 printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (tls_version_only) {
+                printf("%s:%s %s\n", results[i].host, results[i].port, results[i].tls_version);
             } else if (check_host_only) {
                 const char *match_str = results[i].hostname_match ? "MATCH" : "MISMATCH";
                 const char *match_color = results[i].hostname_match ? C_GREEN : C_RED;
