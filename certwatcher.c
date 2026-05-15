@@ -992,6 +992,7 @@ int main(int argc, char **argv) {
     int nagios = 0;
     int shell_output = 0;
     int markdown = 0;
+    int check_host_only = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1091,6 +1092,8 @@ int main(int argc, char **argv) {
             shell_output = 1;
         } else if (strcmp(argv[i], "--markdown") == 0 || strcmp(argv[i], "--md") == 0) {
             markdown = 1;
+        } else if (strcmp(argv[i], "--check-host") == 0) {
+            check_host_only = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1491,6 +1494,12 @@ watch_loop:
                 printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (check_host_only) {
+                const char *match_str = results[i].hostname_match ? "MATCH" : "MISMATCH";
+                const char *match_color = results[i].hostname_match ? C_GREEN : C_RED;
+                printf("%s:%s %s%s%s (CN=%s, SANs=%d)\n",
+                       results[i].host, results[i].port, match_color, match_str, C_RESET,
+                       results[i].common_name, results[i].san_count);
             } else if (markdown) {
                 if (i == 0) {
                     printf("| Host | Status | Days | CN | Issuer | TLS | Key |\n");
