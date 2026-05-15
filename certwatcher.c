@@ -989,6 +989,7 @@ int main(int argc, char **argv) {
     int watch_interval = 0;
     int chain_pem_output = 0;
     int prometheus = 0;
+    int nagios = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1082,6 +1083,8 @@ int main(int argc, char **argv) {
             chain_pem_output = 1;
         } else if (strcmp(argv[i], "--prometheus") == 0) {
             prometheus = 1;
+        } else if (strcmp(argv[i], "--nagios") == 0) {
+            nagios = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1482,6 +1485,17 @@ watch_loop:
                 printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (nagios) {
+                const char *state;
+                int code;
+                if (!results[i].ssl_ok) { state = "CRITICAL"; code = 2; }
+                else if (results[i].days_left < 0) { state = "CRITICAL"; code = 2; }
+                else if (results[i].days_left <= warn_days) { state = "WARNING"; code = 1; }
+                else { state = "OK"; code = 0; }
+                printf("SSL %s - %s:%s %d days | days=%d;%d;0;0 connect_ms=%.1f\n",
+                       state, results[i].host, results[i].port, results[i].days_left,
+                       results[i].days_left, warn_days, results[i].total_ms);
+                (void)code;
             } else if (prometheus) {
                 printf("certwatcher_days_left{host=\"%s\",port=\"%s\"} %d\n",
                        results[i].host, results[i].port, results[i].days_left);
