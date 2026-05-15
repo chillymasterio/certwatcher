@@ -185,6 +185,7 @@ typedef struct {
 
     /* PEM data */
     char pem[8192];
+    char chain_pem[32768];
 
     /* Timing */
     double connect_ms;
@@ -644,12 +645,26 @@ static int fetch_cert(const char *host, const char *port, int timeout_sec,
     STACK_OF(X509) *chain = SSL_get_peer_cert_chain(ssl);
     if (chain) {
         info->chain_depth = sk_X509_num(chain);
+        info->chain_pem[0] = '\0';
+        size_t chain_pem_off = 0;
         int i;
         for (i = 0; i < info->chain_depth && i < 10; i++) {
             X509 *c = sk_X509_value(chain, i);
             X509_NAME_oneline(X509_get_subject_name(c),
                               info->chain_subjects[i],
                               sizeof(info->chain_subjects[i]));
+            /* Extract chain cert PEM */
+            BIO *cbio = BIO_new(BIO_s_mem());
+            if (cbio && PEM_write_bio_X509(cbio, c)) {
+                BUF_MEM *bptr;
+                BIO_get_mem_ptr(cbio, &bptr);
+                if (bptr && chain_pem_off + bptr->length < sizeof(info->chain_pem) - 1) {
+                    memcpy(info->chain_pem + chain_pem_off, bptr->data, bptr->length);
+                    chain_pem_off += bptr->length;
+                    info->chain_pem[chain_pem_off] = '\0';
+                }
+            }
+            if (cbio) BIO_free(cbio);
         }
     }
 
@@ -972,6 +987,7 @@ int main(int argc, char **argv) {
     int sig_algo_only = 0;
     int lifetime_bar = 0;
     int watch_interval = 0;
+    int chain_pem_output = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1061,6 +1077,8 @@ int main(int argc, char **argv) {
             lifetime_bar = 1;
         } else if (strcmp(argv[i], "--watch") == 0 && i + 1 < argc) {
             watch_interval = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--chain-pem") == 0) {
+            chain_pem_output = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1461,6 +1479,8 @@ watch_loop:
                 printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (chain_pem_output) {
+                printf("# %s:%s full chain\n%s", results[i].host, results[i].port, results[i].chain_pem);
             } else if (pem_output) {
                 printf("# %s:%s\n%s", results[i].host, results[i].port, results[i].pem);
             } else if (ndjson) {
