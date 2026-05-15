@@ -988,6 +988,7 @@ int main(int argc, char **argv) {
     int lifetime_bar = 0;
     int watch_interval = 0;
     int chain_pem_output = 0;
+    int prometheus = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1079,6 +1080,8 @@ int main(int argc, char **argv) {
             watch_interval = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--chain-pem") == 0) {
             chain_pem_output = 1;
+        } else if (strcmp(argv[i], "--prometheus") == 0) {
+            prometheus = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1479,6 +1482,17 @@ watch_loop:
                 printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (prometheus) {
+                printf("certwatcher_days_left{host=\"%s\",port=\"%s\"} %d\n",
+                       results[i].host, results[i].port, results[i].days_left);
+                printf("certwatcher_valid{host=\"%s\",port=\"%s\"} %d\n",
+                       results[i].host, results[i].port, results[i].chain_valid);
+                printf("certwatcher_connect_ms{host=\"%s\",port=\"%s\"} %.1f\n",
+                       results[i].host, results[i].port, results[i].total_ms);
+                printf("certwatcher_key_bits{host=\"%s\",port=\"%s\"} %d\n",
+                       results[i].host, results[i].port, results[i].key_bits);
+                printf("certwatcher_self_signed{host=\"%s\",port=\"%s\"} %d\n",
+                       results[i].host, results[i].port, results[i].self_signed);
             } else if (chain_pem_output) {
                 printf("# %s:%s full chain\n%s", results[i].host, results[i].port, results[i].chain_pem);
             } else if (pem_output) {
