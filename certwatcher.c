@@ -990,6 +990,7 @@ int main(int argc, char **argv) {
     int chain_pem_output = 0;
     int prometheus = 0;
     int nagios = 0;
+    int shell_output = 0;
     int match_host = 0;
     int parallel = 0;
     int count_only = 0;
@@ -1085,6 +1086,8 @@ int main(int argc, char **argv) {
             prometheus = 1;
         } else if (strcmp(argv[i], "--nagios") == 0) {
             nagios = 1;
+        } else if (strcmp(argv[i], "--shell") == 0) {
+            shell_output = 1;
         } else if (strcmp(argv[i], "--pem") == 0) {
             pem_output = 1;
         } else if (strcmp(argv[i], "--match-host") == 0) {
@@ -1485,6 +1488,21 @@ watch_loop:
                 printf("%s:%s %s\n", results[i].host, results[i].port, buf);
             } else if (days_only) {
                 printf("%s:%s %d\n", results[i].host, results[i].port, results[i].days_left);
+            } else if (shell_output) {
+                char buf[64];
+                format_time(results[i].not_after, buf, sizeof(buf));
+                printf("CERT_HOST='%s'\n", results[i].host);
+                printf("CERT_PORT='%s'\n", results[i].port);
+                printf("CERT_CN='%s'\n", results[i].common_name);
+                printf("CERT_ISSUER='%s'\n", results[i].issuer);
+                printf("CERT_DAYS_LEFT=%d\n", results[i].days_left);
+                printf("CERT_EXPIRY='%s'\n", buf);
+                printf("CERT_KEY_TYPE='%s'\n", results[i].key_type);
+                printf("CERT_KEY_BITS=%d\n", results[i].key_bits);
+                printf("CERT_TLS='%s'\n", results[i].tls_version);
+                printf("CERT_VALID=%d\n", results[i].chain_valid);
+                printf("CERT_SELF_SIGNED=%d\n", results[i].self_signed);
+                printf("\n");
             } else if (nagios) {
                 const char *state;
                 int code;
