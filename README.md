@@ -170,3 +170,19 @@ github.com
 ## License
 
 MIT
+
+## Piping and Automation
+
+```bash
+# Check all hosts from a file, sorted by expiry
+cat hosts.txt | certwatcher --stdin --sort days
+
+# Only show certificates expiring within 14 days
+certwatcher --stdin --min-days 14 < hosts.txt
+
+# Export to file in Prometheus format
+certwatcher google.com github.com --prometheus -o /var/lib/node_exporter/certs.prom
+
+# Filter specific environments
+certwatcher --stdin --include prod --exclude staging < all-hosts.txt
+```
