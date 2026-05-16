@@ -1614,3 +1614,29 @@ watch_loop:
     if (any_error) return 2;
     return 0;
 }
+
+/* ── Sort comparators ── */
+
+static int cmp_by_days(const void *a, const void *b) {
+    const cert_info_t *ca = (const cert_info_t *)a;
+    const cert_info_t *cb = (const cert_info_t *)b;
+    return ca->days_left - cb->days_left;
+}
+
+static int cmp_by_host(const void *a, const void *b) {
+    const cert_info_t *ca = (const cert_info_t *)a;
+    const cert_info_t *cb = (const cert_info_t *)b;
+    return strcmp(ca->host, cb->host);
+}
+
+static int cmp_by_issuer(const void *a, const void *b) {
+    const cert_info_t *ca = (const cert_info_t *)a;
+    const cert_info_t *cb = (const cert_info_t *)b;
+    return strcmp(ca->issuer, cb->issuer);
+}
+
+static int cmp_by_tls(const void *a, const void *b) {
+    const cert_info_t *ca = (const cert_info_t *)a;
+    const cert_info_t *cb = (const cert_info_t *)b;
+    return cb->tls_version_num - ca->tls_version_num;
+}
