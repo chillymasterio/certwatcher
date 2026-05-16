@@ -1,0 +1,19 @@
+# certwatcher configuration example
+# Place as ~/.certwatcher.conf or pass with --config
+
+# Default warning threshold
+warn_days = 30
+
+# Connection settings
+connect_timeout = 10
+max_parallel = 32
+
+# Default output format (text, json, csv, prometheus, nagios)
+format = text
+
+# Hosts to check (one per line, # for comments)
+[hosts]
+google.com
+github.com:443
+smtp.gmail.com:587:smtp
+imap.gmail.com:993
