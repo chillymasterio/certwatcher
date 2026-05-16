@@ -85,3 +85,15 @@ Initial release.
 - Verbose mode with SANs, serial, fingerprint, chain details
 - Cross-platform: Linux, macOS, Windows
 - Man page
+
+## [1.5.0] - 2026-05-16
+
+### Added
+- `--sni HOST` — override SNI hostname during TLS handshake
+- `-o, --output FILE` — write results to file instead of stdout
+- `--sort KEY` — sort results by days, host, issuer, or tls
+- `--min-days N` / `--max-days N` — filter by certificate lifetime
+- `--max-parallel N` — limit concurrent connection threads (default: 32)
+- `--include PATTERN` / `--exclude PATTERN` — hostname pattern filters
+- `--stdin` — read hostnames from standard input pipe
+- `--connect-timeout N` — TCP connection timeout in seconds
