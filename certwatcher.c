@@ -53,6 +53,7 @@ static int use_color = 1;
 static int g_af_family = AF_UNSPEC;
 static const char *g_ca_file = NULL;
 static const char *g_ciphers = NULL;
+static const char *g_sni_host = NULL;
 static const char *g_date_format = "%Y-%m-%d %H:%M:%S UTC";
 
 #define C_RED     (use_color ? "\033[31m" : "")
@@ -1136,7 +1137,10 @@ int main(int argc, char **argv) {
             delay_ms = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--timestamp") == 0) {
             show_timestamp = 1;
+        } else if (strcmp(argv[i], "--sni") == 0 && i + 1 < argc) {
+            g_sni_host = argv[++i];
         } else if (strcmp(argv[i], "--ciphers") == 0 && i + 1 < argc) {
+    "  --sni HOST          Override SNI hostname sent during TLS handshake\n"
             ciphers = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
