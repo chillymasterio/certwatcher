@@ -61,6 +61,7 @@ static int g_max_days = 999999;
 static int g_max_parallel = 32;
 static const char *g_include_pattern = NULL;
 static const char *g_exclude_pattern = NULL;
+static int g_read_stdin = 0;
 static const char *g_date_format = "%Y-%m-%d %H:%M:%S UTC";
 
 #define C_RED     (use_color ? "\033[31m" : "")
@@ -1055,6 +1056,8 @@ int main(int argc, char **argv) {
             quiet = 1;
         } else if (strcmp(argv[i], "--include") == 0 && i + 1 < argc) {
             g_include_pattern = argv[++i];
+        } else if (strcmp(argv[i], "--stdin") == 0) {
+            g_read_stdin = 1;
         } else if (strcmp(argv[i], "--exclude") == 0 && i + 1 < argc) {
             g_exclude_pattern = argv[++i];
         } else if (strcmp(argv[i], "--max-parallel") == 0 && i + 1 < argc) {
@@ -1071,6 +1074,8 @@ int main(int argc, char **argv) {
             output_file = argv[++i];
         } else if (strcmp(argv[i], "--include") == 0 && i + 1 < argc) {
             g_include_pattern = argv[++i];
+        } else if (strcmp(argv[i], "--stdin") == 0) {
+            g_read_stdin = 1;
         } else if (strcmp(argv[i], "--exclude") == 0 && i + 1 < argc) {
             g_exclude_pattern = argv[++i];
         } else if (strcmp(argv[i], "--max-parallel") == 0 && i + 1 < argc) {
@@ -1172,6 +1177,8 @@ int main(int argc, char **argv) {
             show_timestamp = 1;
         } else if (strcmp(argv[i], "--include") == 0 && i + 1 < argc) {
             g_include_pattern = argv[++i];
+        } else if (strcmp(argv[i], "--stdin") == 0) {
+            g_read_stdin = 1;
         } else if (strcmp(argv[i], "--exclude") == 0 && i + 1 < argc) {
             g_exclude_pattern = argv[++i];
         } else if (strcmp(argv[i], "--max-parallel") == 0 && i + 1 < argc) {
@@ -1197,6 +1204,7 @@ int main(int argc, char **argv) {
     "  --max-parallel N    Max concurrent connections (default: 32)\n"
     "  --include PATTERN   Only check hosts matching pattern\n"
     "  --exclude PATTERN   Skip hosts matching pattern\n"
+    "  --stdin             Read hostnames from stdin (one per line)\n"
             ciphers = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
