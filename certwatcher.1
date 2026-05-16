@@ -186,3 +186,36 @@ MIT License.
 .SH SEE ALSO
 .BR openssl (1),
 .BR openssl\-s_client (1)
+
+.SH "NEW IN 1.5.0"
+.TP
+.B \-\-sni HOST
+Override the SNI hostname sent during the TLS handshake. Useful when connecting
+via IP address or through a reverse proxy.
+.TP
+.B \-o, \-\-output FILE
+Write all output to FILE instead of stdout.
+.TP
+.B \-\-sort KEY
+Sort results by: days (expiry), host (alphabetical), issuer, or tls (version).
+.TP
+.B \-\-min\-days N
+Only show certificates expiring within N days.
+.TP
+.B \-\-max\-days N
+Only show certificates with more than N days remaining.
+.TP
+.B \-\-max\-parallel N
+Limit concurrent connection threads (default 32, max 256).
+.TP
+.B \-\-include PATTERN
+Only check hosts whose name contains PATTERN.
+.TP
+.B \-\-exclude PATTERN
+Skip hosts whose name contains PATTERN.
+.TP
+.B \-\-stdin
+Read hostnames from standard input, one per line.
+.TP
+.B \-\-connect\-timeout N
+Set TCP connection timeout to N seconds (default 10).
