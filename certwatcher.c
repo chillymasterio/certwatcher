@@ -57,6 +57,7 @@ static const char *g_sni_host = NULL;
 static const char *g_output_file = NULL;
 static const char *g_sort_by = NULL;
 static int g_min_days = -999999;
+static int g_max_days = 999999;
 static const char *g_date_format = "%Y-%m-%d %H:%M:%S UTC";
 
 #define C_RED     (use_color ? "\033[31m" : "")
@@ -1049,12 +1050,16 @@ int main(int argc, char **argv) {
             verbose = 1;
         } else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
             quiet = 1;
+        } else if (strcmp(argv[i], "--max-days") == 0 && i + 1 < argc) {
+            g_max_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--min-days") == 0 && i + 1 < argc) {
             g_min_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--sort") == 0 && i + 1 < argc) {
             g_sort_by = argv[++i];
         } else if ((strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) && i + 1 < argc) {
             output_file = argv[++i];
+        } else if (strcmp(argv[i], "--max-days") == 0 && i + 1 < argc) {
+            g_max_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--min-days") == 0 && i + 1 < argc) {
             g_min_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--sort") == 0) {
@@ -1146,6 +1151,8 @@ int main(int argc, char **argv) {
             delay_ms = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--timestamp") == 0) {
             show_timestamp = 1;
+        } else if (strcmp(argv[i], "--max-days") == 0 && i + 1 < argc) {
+            g_max_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--min-days") == 0 && i + 1 < argc) {
             g_min_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--sort") == 0 && i + 1 < argc) {
@@ -1159,6 +1166,7 @@ int main(int argc, char **argv) {
     "  -o, --output FILE   Write output to file instead of stdout\n"
     "  --sort KEY          Sort results by: days, host, issuer, tls\n"
     "  --min-days N        Only show certs expiring within N days\n"
+    "  --max-days N        Only show certs with more than N days left\n"
             ciphers = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
