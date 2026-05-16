@@ -69,6 +69,7 @@ static int g_expiry_window_start = 0;
 static int g_expiry_window_end = 0;
 static int g_retry_count = 0;
 static int g_retry_delay_ms = 1000;
+static int g_no_verify = 0;
 static const char *g_date_format = "%Y-%m-%d %H:%M:%S UTC";
 
 #define C_RED     (use_color ? "\033[31m" : "")
