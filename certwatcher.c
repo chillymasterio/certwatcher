@@ -64,6 +64,7 @@ static const char *g_exclude_pattern = NULL;
 static int g_read_stdin = 0;
 static int g_connect_timeout = 10;
 static int g_revoked_only = 0;
+static const char *g_issuer_filter = NULL;
 static const char *g_date_format = "%Y-%m-%d %H:%M:%S UTC";
 
 #define C_RED     (use_color ? "\033[31m" : "")
