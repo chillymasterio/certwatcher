@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.5.1 (2026-08-04)
+
+### Fixed
+- Build regression: added missing `<sys/select.h>` and `<sys/time.h>`
+  includes required for `fd_set` / `select()` / `struct timeval`.
+- Removed four stray help-text string literals that had been dropped
+  into the middle of the argument-parse `else if` chain and broke
+  the C syntax on Linux and macOS (regression since v1.5.0).
+- Merged three duplicated `--stdin` / `--exclude` / `--max-parallel`
+  argument-handler blocks into a single set of cases.
+
 ## v1.4.0 (2026-05-15)
 
 ### New Features

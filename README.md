@@ -1,5 +1,7 @@
 # certwatcher
 
+[![Build](https://github.com/chillymasterio/certwatcher/actions/workflows/build.yml/badge.svg)](https://github.com/chillymasterio/certwatcher/actions/workflows/build.yml)
+
 **SSL/TLS certificate monitoring from the command line.**
 
 ```

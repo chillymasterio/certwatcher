@@ -30,6 +30,8 @@
   #pragma comment(lib, "libcrypto.lib")
 #else
   #include <sys/socket.h>
+  #include <sys/select.h>
+  #include <sys/time.h>
   #include <netinet/in.h>
   #include <netdb.h>
   #include <unistd.h>
@@ -1068,7 +1070,6 @@ int main(int argc, char **argv) {
             g_connect_timeout = atoi(argv[++i]);
             if (g_connect_timeout < 1) g_connect_timeout = 1;
         } else if (strcmp(argv[i], "--stdin") == 0) {
-    "  --connect-timeout N Connection timeout in seconds (default: 10)\n"
             g_read_stdin = 1;
         } else if (strcmp(argv[i], "--exclude") == 0 && i + 1 < argc) {
             g_exclude_pattern = argv[++i];
@@ -1080,18 +1081,11 @@ int main(int argc, char **argv) {
             g_max_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--min-days") == 0 && i + 1 < argc) {
             g_min_days = atoi(argv[++i]);
-        } else if (strcmp(argv[i], "--sort") == 0 && i + 1 < argc) {
-            g_sort_by = argv[++i];
         } else if ((strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) && i + 1 < argc) {
             output_file = argv[++i];
-        } else if (strcmp(argv[i], "--include") == 0 && i + 1 < argc) {
-            g_include_pattern = argv[++i];
         } else if (strcmp(argv[i], "--connect-timeout") == 0 && i + 1 < argc) {
             g_connect_timeout = atoi(argv[++i]);
             if (g_connect_timeout < 1) g_connect_timeout = 1;
-        } else if (strcmp(argv[i], "--stdin") == 0) {
-    "  --connect-timeout N Connection timeout in seconds (default: 10)\n"
-            g_read_stdin = 1;
         } else if (strcmp(argv[i], "--exclude") == 0 && i + 1 < argc) {
             g_exclude_pattern = argv[++i];
         } else if (strcmp(argv[i], "--max-parallel") == 0 && i + 1 < argc) {
@@ -1197,7 +1191,6 @@ int main(int argc, char **argv) {
             g_connect_timeout = atoi(argv[++i]);
             if (g_connect_timeout < 1) g_connect_timeout = 1;
         } else if (strcmp(argv[i], "--stdin") == 0) {
-    "  --connect-timeout N Connection timeout in seconds (default: 10)\n"
             g_read_stdin = 1;
         } else if (strcmp(argv[i], "--exclude") == 0 && i + 1 < argc) {
             g_exclude_pattern = argv[++i];
@@ -1209,23 +1202,11 @@ int main(int argc, char **argv) {
             g_max_days = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--min-days") == 0 && i + 1 < argc) {
             g_min_days = atoi(argv[++i]);
-        } else if (strcmp(argv[i], "--sort") == 0 && i + 1 < argc) {
-            g_sort_by = argv[++i];
         } else if ((strcmp(argv[i], "--output") == 0 || strcmp(argv[i], "-o") == 0) && i + 1 < argc) {
             g_output_file = argv[++i];
         } else if (strcmp(argv[i], "--sni") == 0 && i + 1 < argc) {
             g_sni_host = argv[++i];
         } else if (strcmp(argv[i], "--ciphers") == 0 && i + 1 < argc) {
-    "  --sni HOST          Override SNI hostname sent during TLS handshake\n"
-    "  -o, --output FILE   Write output to file instead of stdout\n"
-    "  --sort KEY          Sort results by: days, host, issuer, tls\n"
-    "  --min-days N        Only show certs expiring within N days\n"
-    "  --max-days N        Only show certs with more than N days left\n"
-    "  --max-parallel N    Max concurrent connections (default: 32)\n"
-    "  --include PATTERN   Only check hosts matching pattern\n"
-    "  --exclude PATTERN   Skip hosts matching pattern\n"
-    "  --stdin             Read hostnames from stdin (one per line)\n"
-    "  --connect-timeout N Connection timeout in seconds (default: 10)\n"
             ciphers = argv[++i];
         } else if (strcmp(argv[i], "-1") == 0) {
             oneline = 1;
